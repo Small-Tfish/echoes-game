@@ -294,7 +294,7 @@
   "layouts": [
     {
       "id": "arena",
-      "name": "静默竞技场",
+      "name": "Beginner",
       "w": 2400,
       "h": 1700,
       "extraPillars": 2,
@@ -307,7 +307,7 @@
     },
     {
       "id": "cross",
-      "name": "十字回廊",
+      "name": "Crossing",
       "w": 2600,
       "h": 1750,
       "extraPillars": 0,
@@ -318,7 +318,7 @@
     },
     {
       "id": "broken",
-      "name": "断桥",
+      "name": "Broken Bridge",
       "w": 2400,
       "h": 1800,
       "extraPillars": 1,
@@ -332,7 +332,7 @@
     },
     {
       "id": "ring",
-      "name": "环廊",
+      "name": "Ring",
       "w": 2500,
       "h": 1750,
       "extraPillars": 1,
@@ -345,7 +345,7 @@
     },
     {
       "id": "twin",
-      "name": "双塔",
+      "name": "Twin Tower",
       "w": 2500,
       "h": 1700,
       "extraPillars": 1,
@@ -358,7 +358,7 @@
     },
     {
       "id": "shards",
-      "name": "碎隙",
+      "name": "Fractures",
       "w": 2600,
       "h": 1800,
       "extraPillars": 9,
@@ -411,6 +411,7 @@ const POWERUP_TYPES = {
   bomb:     { color: '#d4c48a', rgb: '212,196,138', name: '爆破' },
   secondChance: { color: '#00ffcc', rgb: '0,255,204', name: '第二次机会' },
   vision:   { color: '#c084fc', rgb: '192,132,252', name: '广域视野' },
+  egg:      { color: '#ffd15c', rgb: '255,209,92', name: '宠物蛋' },
 };
 
 // —— 狙击 ——
@@ -443,8 +444,21 @@ const MELEE_MAX_CHARGE = 3.0;
 const MELEE_MAX_LIFE = 2.5;
 const MELEE_BASE_SPEED = 350;
 const MELEE_MAX_SPEED = 700;
-const MELEE_ANGLE = Math.PI / 6;
+const MELEE_ANGLE = Math.PI / 36;  // 两把飞刀的总张角 10°
 const MELEE_MAX_DURABILITY = 10;
+
+// —— 宠物蛋 ——
+const PET_CD = 5;                 // 技能冷却
+const PET_PER_CAST = 4;           // 每颗蛋召唤 4 个
+const PET_MAX_STACKS = 4;         // 最多叠加 4 层
+const PET_LIFE = 18;              // 友方生物存活时间
+const PET_ATTACK_CD = 0.7;
+const PET_DAMAGE = 1;
+const PET_SPEED = 140;
+
+// —— 生命 / 血量成长 ——
+const HP_BAR_MAX = 8;             // 血条最多显示 8 格
+const HP_OVERFLOW_WAVE = 8;       // 第 8 波起允许回血溢出
 
 // —— 爆破 ——
 const BOMB_CD_BASE = 2.0;
