@@ -87,6 +87,13 @@
   #bombLabel{font-size:9px;letter-spacing:2px;color:rgba(220,210,160,.7);font-weight:800}
   #bombState{font-size:11px;font-weight:900;color:#e8e4c8;margin-top:2px;
     font-variant-numeric:tabular-nums}
+
+  #blockHud{position:fixed;bottom:184px;left:22px;z-index:11;text-align:left;
+    pointer-events:none;opacity:.6;transition:opacity .2s}
+  #blockHud.hidden{opacity:0}
+  #blockLabel{font-size:9px;letter-spacing:2px;color:rgba(155,231,255,.75);font-weight:800}
+  #blockState{font-size:11px;font-weight:900;color:#d8f6ff;margin-top:2px;
+    font-variant-numeric:tabular-nums}
   #bombHud.active #bombLabel{color:#d4c48a}
   #bombHud.active #bombState{color:#d4c48a;text-shadow:0 0 12px rgba(220,210,160,.6)}
 
@@ -95,6 +102,19 @@
     background:rgba(8,10,18,.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
     transition:opacity .3s;overflow-y:auto}
   .overlay.hidden{opacity:0;pointer-events:none}
+  .overlay.scroll{justify-content:flex-start;padding-top:34px;padding-bottom:34px}
+  .overlay.scroll .btnRow{position:sticky;bottom:0;z-index:2;padding:10px 0 6px;
+    background:rgba(8,10,18,.96);border-top:1px solid rgba(130,170,240,.12)}
+  #rotateHint{position:fixed;inset:0;z-index:200;display:none;flex-direction:column;
+    align-items:center;justify-content:center;gap:16px;background:#05060a;
+    color:#dce9ff;text-align:center;padding:24px;font-family:-apple-system,"PingFang SC",sans-serif}
+  body.mobile #rotateHint{display:flex}
+  @media (orientation: landscape){ body.mobile #rotateHint{display:none} }
+  #rotateHint .phone{width:52px;height:88px;border:3px solid #9be7ff;border-radius:10px;
+    box-shadow:0 0 30px rgba(155,231,255,.35);animation:rotatePhone 1.8s ease-in-out infinite}
+  #rotateHint h2{font-size:22px;font-weight:900;letter-spacing:2px;color:#9be7ff;margin:0}
+  #rotateHint p{font-size:12px;color:rgba(180,210,240,.6);margin:0;letter-spacing:1px}
+  @keyframes rotatePhone{0%,20%{transform:rotate(0)}60%,100%{transform:rotate(90deg)}}
   .overlay h1{font-size:clamp(32px,6vw,52px);font-weight:900;letter-spacing:3px;
     background:linear-gradient(135deg,#7ef9d0,#5fb8ff 55%,#c084fc);
     -webkit-background-clip:text;background-clip:text;color:transparent;
@@ -184,10 +204,10 @@
     letter-spacing:3px;color:rgba(170,200,240,.42);font-weight:800;pointer-events:none}
 
   #mobileSkills{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:14;
-    display:grid;grid-template-columns:repeat(4,46px);gap:8px}
-  .mSkill{height:46px;border-radius:12px;border:1px solid rgba(130,170,240,.35);
+    display:grid;grid-template-columns:repeat(3,42px);gap:7px}
+  .mSkill{height:42px;border-radius:12px;border:1px solid rgba(130,170,240,.35);
     background:rgba(12,18,30,.82);color:rgba(225,238,255,.85);font-family:inherit;
-    font-size:11px;font-weight:800;letter-spacing:1px;touch-action:none;position:relative;
+    font-size:10px;font-weight:800;letter-spacing:1px;touch-action:none;position:relative;
     display:flex;align-items:center;justify-content:center;padding-top:4px;
     backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
   .mSkill:active,.mSkill.on{border-color:#7ef9d0;color:#7ef9d0;
@@ -197,7 +217,12 @@
     color:rgba(200,225,255,.55);font-weight:700;text-align:center}
   .mSkill.on .sub{color:#7ef9d0}
   .mSkill.charging{border-color:#ffd166;color:#ffd166;box-shadow:0 0 16px rgba(255,209,102,.5)}
-  body.mobile #sniperHud, body.mobile #meleeHud, body.mobile #bombHud{display:none}
+  body.mobile #sniperHud, body.mobile #meleeHud, body.mobile #bombHud, body.mobile #blockHud{display:none}
+  #mobilePause{display:none}
+  body.mobile #mobilePause{display:block;position:fixed;left:14px;top:48px;z-index:15;
+    width:38px;height:38px;border-radius:50%;border:1px solid rgba(130,170,240,.35);
+    background:rgba(12,18,30,.7);color:rgba(225,238,255,.8);font-size:14px;
+    font-family:inherit;line-height:1}
   body.mobile .hud{padding-right:178px}
   body.mobile #energyWrap{display:none}
   body.mobile #buffs{top:92px;bottom:auto;max-width:56vw}
@@ -205,7 +230,8 @@
   body.mobile #minimapBar{font-size:7px}
   @media (max-width: 620px) {
     #joyMove, #joyAim{width:130px;height:130px}
-    #mobileSkills{grid-template-columns:repeat(4,40px);gap:6px}
+    #mobileSkills{grid-template-columns:repeat(3,38px);gap:6px}
+    .mSkill{height:38px;font-size:9px}
     .mSkill{height:40px;font-size:10px}
   }
 </style>
@@ -242,6 +268,11 @@
   <div id="meleeState">就绪</div>
 </div>
 
+<div id="blockHud" class="hidden">
+  <div id="blockLabel">BLOCK</div>
+  <div id="blockState">按 B 放置</div>
+</div>
+
 <div id="buffs"></div>
 
 <div id="minimapWrap">
@@ -263,14 +294,16 @@
   </div>
   <div id="mobileSkills">
     <button class="mSkill" data-skill="echo">残影<span class="sub">⚡2</span></button>
+    <button class="mSkill" data-skill="pet">宠物<span class="sub">0</span></button>
+    <button class="mSkill" data-skill="block">方块<span class="sub">0</span></button>
+    <button class="mSkill" data-skill="burrow">遁地<span class="sub">就绪</span></button>
     <button class="mSkill" data-skill="detonate">引爆<span class="sub">0</span></button>
     <button class="mSkill" data-skill="bomb">爆破<span class="sub">未解锁</span></button>
     <button class="mSkill" data-skill="sniper">狙击<span class="sub">0</span></button>
     <button class="mSkill" data-skill="melee">飞刀<span class="sub">4</span></button>
     <button class="mSkill" data-skill="focus">精准<span class="sub">切换</span></button>
-    <button class="mSkill" data-skill="map">地图<span class="sub">切换</span></button>
-    <button class="mSkill" data-skill="pause">暂停<span class="sub"> </span></button>
   </div>
+  <button id="mobilePause" aria-label="暂停">⏸</button>
 </div>
 
 <div id="energyWrap">
@@ -283,6 +316,11 @@
 </div>
 
 <div class="overlay" id="overlay"></div>
+<div id="rotateHint">
+  <div class="phone"></div>
+  <h2>请横屏游玩</h2>
+  <p>旋转设备后会自动继续</p>
+</div>
 
 <!-- ============================================================
      地图文件：每个 wave 按顺序读取一张布局，并依据波次生成碎石柱。
@@ -400,7 +438,7 @@ const SPREAD_CHANCE = 0.30;
 const BUFF_DURATION = { fireRate: 8, spread: 6 };
 
 const BOSS_INTERVAL = 3;
-const MAX_ENEMIES = 200;          // 同屏/单波怪物数量上限
+const MAX_ENEMIES = 400;          // 同屏/单波怪物数量上限
 
 const POWERUP_TYPES = {
   fireRate: { color: '#ffd166', rgb: '255,209,102', name: '射速提升' },
@@ -412,6 +450,7 @@ const POWERUP_TYPES = {
   secondChance: { color: '#00ffcc', rgb: '0,255,204', name: '第二次机会' },
   vision:   { color: '#c084fc', rgb: '192,132,252', name: '广域视野' },
   egg:      { color: '#ffd15c', rgb: '255,209,92', name: '宠物蛋' },
+  block:    { color: '#9be7ff', rgb: '155,231,255', name: '方块' },
 };
 
 // —— 狙击 ——
@@ -455,19 +494,35 @@ const PET_LIFE = 18;              // 友方生物存活时间
 const PET_ATTACK_CD = 0.7;
 const PET_DAMAGE = 1;
 const PET_SPEED = 140;
+const PET_TYPES = [
+  { type: 'tracker',  shape: 'tri',     speed: 150, damage: 0.7, atkCd: 0.8 },
+  { type: 'hunter',   shape: 'diamond', speed: 170, damage: 0.6, atkCd: 0.7 },
+  { type: 'shooter',  shape: 'square',  speed: 125, damage: 0.7, atkCd: 0.9 },
+  { type: 'splitter', shape: 'hex',     speed: 115, damage: 0.9, atkCd: 1.0 },
+];
 
 // —— 生命 / 血量成长 ——
 const HP_BAR_MAX = 8;             // 血条最多显示 8 格
 const HP_OVERFLOW_WAVE = 8;       // 第 8 波起允许回血溢出
 
+// —— 方块 ——
+const BLOCK_SIZE = 54;
+const BLOCK_HP = 1000;
+const BLOCK_MASS = 10;
+const BLOCK_MAX_ITEMS = 5;
+
 // —— 爆破 ——
-const BOMB_CD_BASE = 2.0;
+const BOMB_CD_BASE = 5.0;
 const BOMB_RADIUS_BASE = 160;
 const BOMB_FORCE_BASE = 450;
 const BOMB_MAX_STACKS = 3;
 
 // —— 地图 / 视野 ——
-const VISION_DURATION = 9;       // 紫色技能：广域视野持续时间
+const VISION_DURATION = 18;      // 紫色技能：单次广域视野持续时间（已延长）
+const VISION_MAX_ACTIVE = 90;    // 单局可叠加的上限
+const VISION_BANK_MAX = 300;     // 跨局视野银行上限
+const VISION_START_CAP = 60;     // 每局开局最多直接启用 60 秒
+const VISION_STORAGE_KEY = 'echoes_vision_bank_v1';
 const VISION_ZOOM = 0.62;        // 视野放大后的摄像机缩放（越小看得越远）
 let MINIMAP_W = 232;
 let MINIMAP_H = 158;
@@ -475,6 +530,21 @@ let MINIMAP_TOP = 104;
 let MINIMAP_RIGHT = 18;
 const MINIMAP_LOCAL_SPAN = 1500; // LOCAL 模式固定的世界跨度（不随视野缩放变化）
 const MINIMAP_MM_SCALE = 0.5;    // 小地图底图分辨率：像素 / 世界单位
+
+// —— 遁地 / 开局金身 ——
+const BURROW_DURATION = 2;       // 遁地持续时间
+const BURROW_CD = 8;             // 遁地冷却
+const GOLDEN_DURATION = 3;       // 开局金身
+
+// —— 程序化地图（前 5 关使用预设地图） ——
+const PRESET_WAVES = 5;
+const MAP_GROWTH = 320;          // 之后每关地图宽高各 +320
+const PROC_WALL_GAP = 120;       // 墙体之间至少留 120px 通道（Boss 直径 84）
+const PROC_MARGIN = 150;         // 墙体离地图边缘的最小距离
+const PROC_SPAWN_CLEAR = 340;    // 出生点周围净空
+const PROC_AREA_PCT = [0.05, 0.10, 0.20, 0.25, 0.25];
+const PROC_MIN_SIZE = [10, 20, 40, 80, 160];
+const PROC_CLUSTERS = [3, 4, 8, 16, 16];
 
 // —— 失明 ——
 const BLIND_DURATION = 7;         // 失明持续时间
@@ -487,12 +557,12 @@ const BLIND_RADIUS_MULT = 7;      // 可见半径 = 玩家半径 × 7
 const DEFAULT_BINDS = {
   moveUp: 'w', moveDown: 's', moveLeft: 'a', moveRight: 'd',
   spawnEcho: ' ', toggleSniper: 'r', sniperShoot: 'q', blow: 'g', pause: 'p',
-  toggleMap: 'm',
+  toggleMap: 'm', summonPet: 'e', placeBlock: 'b', burrow: 'c',
 };
 const BIND_LABELS = {
   moveUp: '向上移动', moveDown: '向下移动', moveLeft: '向左移动', moveRight: '向右移动',
   spawnEcho: '召唤残影', toggleSniper: '切换狙击', sniperShoot: '狙击发射', blow: '爆破子弹', pause: '暂停 / 菜单',
-  toggleMap: '全局地图（按住）',
+  toggleMap: '全局地图（按住）', summonPet: '召唤宠物', placeBlock: '放置方块', burrow: '遁地',
 };
 const MODIFIER_KEYS = ['shift','control','alt','meta','capslock','numlock','scrolllock','os','contextmenu'];
 
@@ -548,6 +618,8 @@ const meleeHud = document.getElementById('meleeHud');
 const meleeState = document.getElementById('meleeState');
 const bombHud = document.getElementById('bombHud');
 const bombState = document.getElementById('bombState');
+const blockHud = document.getElementById('blockHud');
+const blockState = document.getElementById('blockState');
 const secondChanceMark = document.getElementById('secondChanceMark');
 
 const minimapWrap = document.getElementById('minimapWrap');
@@ -644,16 +716,19 @@ const S = {
 
   bombUnlocked: false, bombStacks: 0, bombCd: 0,
   secondChance: false,
+  eggStacks: 0, petCd: 0, pets: [],
+  blockItems: 0, blocks: [],
 
-  map: null, cam: { x: 0, y: 0, zoom: 1 }, mini: { global: false, hot: false }, visionTimer: 0,
+  map: null, cam: { x: 0, y: 0, zoom: 1 }, mini: { global: false, hot: false }, visionTimer: 0, visionBank: 0,
+  burrowTimer: 0, burrowCd: 0, goldenTimer: 0,
   pvx: 0, pvy: 0, focusActive: false, sniperTriggered: false,
   aimAngle: 0, aimInit: false,
   bossBarAlpha: 0, spawnCell: 0,
   blindTimer: 0, blindLock: 0, blindAlpha: 0,
   skillHudAlpha: 0,
-  skillFade: { echo: 0, detonate: 0, bomb: 0, sniper: 0, melee: 0, focus: 0, vision: 0, second: 0 },
-  skillPop: { echo: 0, detonate: 0, bomb: 0, sniper: 0, melee: 0, focus: 0, vision: 0, second: 0 },
-  skillActive: { echo: false, detonate: false, bomb: false, sniper: false, melee: false, focus: false, vision: false, second: false },
+  skillFade: { echo: 0, detonate: 0, bomb: 0, sniper: 0, melee: 0, focus: 0, vision: 0, second: 0, pet: 0, burrow: 0 },
+  skillPop: { echo: 0, detonate: 0, bomb: 0, sniper: 0, melee: 0, focus: 0, vision: 0, second: 0, pet: 0, burrow: 0 },
+  skillActive: { echo: false, detonate: false, bomb: false, sniper: false, melee: false, focus: false, vision: false, second: false, pet: false, burrow: false },
 };
 
 const keys = {};
@@ -661,10 +736,35 @@ const touchMove = { active: false, x: 0, y: 0, mag: 0 };
 const touchAim = { active: false, x: 0, y: 0, mag: 0 };
 let lastTs = 0;
 
+// 视野时间银行：localStorage 里的总秒数 = 当前局未用银行 + 正在生效的时间
+function loadVisionState() {
+  try {
+    const v = parseFloat(localStorage.getItem(VISION_STORAGE_KEY));
+    return isFinite(v) ? Math.max(0, Math.min(VISION_BANK_MAX + VISION_MAX_ACTIVE, v)) : 0;
+  } catch (e) { return 0; }
+}
+function saveVisionState(total) {
+  try {
+    const v = Math.max(0, Math.min(VISION_BANK_MAX + VISION_MAX_ACTIVE, Math.round(total * 10) / 10));
+    localStorage.setItem(VISION_STORAGE_KEY, String(v));
+  } catch (e) {}
+}
+function bankVisionOnRunEnd() {
+  if (!S.player) return;
+  const total = Math.max(0, Math.min(VISION_BANK_MAX + VISION_MAX_ACTIVE, S.visionBank + Math.max(0, S.visionTimer)));
+  saveVisionState(total);
+  S.visionBank = total;
+  S.visionTimer = 0;
+}
+
 // ============================================================
 //  初始化
 // ============================================================
 function initGame() {
+  // 如果从进行中的一局重开，先把当前视野时间存进银行
+  if (S.running && S.player && S.visionTimer > 0) {
+    saveVisionState(S.visionBank + S.visionTimer);
+  }
   S.player = { x: W / 2, y: H / 2, r: PLAYER_BASE_R, hp: 3, invuln: 0, angle: -Math.PI / 2 };
   S.enemies = []; S.pBullets = []; S.eBullets = []; S.echoes = []; S.particles = []; S.shockwaves = [];
   S.powerups = [];
@@ -689,7 +789,17 @@ function initGame() {
 
   S.bombUnlocked = false; S.bombStacks = 0; S.bombCd = 0;
   S.secondChance = false;
-  S.visionTimer = 0;
+  S.eggStacks = 0; S.petCd = 0; S.pets = [];
+  S.blockItems = 0; S.blocks = [];
+  const bankTotal = loadVisionState();
+  const startVision = Math.min(VISION_START_CAP, bankTotal);
+  S.visionBank = Math.max(0, bankTotal - startVision);
+  S.visionTimer = startVision;
+  saveVisionState(S.visionBank + S.visionTimer);
+  S.burrowTimer = 0; S.burrowCd = 0;
+  S.goldenTimer = GOLDEN_DURATION;
+  S.banner = { text: '', life: 0 };
+  hpBar.innerHTML = '<span class="hpSeg"></span><span class="hpSeg"></span><span class="hpSeg"></span>';
   S.pvx = 0; S.pvy = 0; S.focusActive = false; S.sniperTriggered = false;
   S.aimAngle = 0; S.aimInit = false;
   S.bossBarAlpha = 0; S.spawnCell = 0;
@@ -709,17 +819,26 @@ function initGame() {
 
   S.mouse = { x: W / 2, y: H / 2 - 150 };
   nextWave();
+  S.banner.text += ' · 金身 3s';
+  S.banner.life = Math.max(S.banner.life, 1.5);
   updateHUD();
   updateBuffsUI(true);
   updateSniperHUD();
   updateMeleeHUD();
   updateBombHUD();
+  updateBlockHUD();
   updateSecondChanceHUD();
 }
 
 function updateHUD() {
   scoreEl.textContent = S.score;
   comboEl.textContent = S.combo > 1 ? `×${(1 + S.combo * 0.1).toFixed(1)} COMBO` : '';
+  const needSegs = Math.min(HP_BAR_MAX, Math.max(3, Math.ceil(S.player.hp)));
+  while (hpBar.children.length < needSegs) {
+    const seg = document.createElement('span');
+    seg.className = 'hpSeg';
+    hpBar.appendChild(seg);
+  }
   const segs = hpBar.children;
   for (let i = 0; i < segs.length; i++) segs[i].classList.toggle('off', i >= S.player.hp);
   energyFill.style.width = (S.energy / S.maxEnergy * 100) + '%';
@@ -734,6 +853,7 @@ function updateHUD() {
   updateSniperHUD();
   updateMeleeHUD();
   updateBombHUD();
+  updateBlockHUD();
   updateSecondChanceHUD();
 }
 
@@ -792,6 +912,14 @@ function updateSecondChanceHUD() {
   secondChanceMark.classList.toggle('on', S.secondChance);
 }
 
+function updateBlockHUD() {
+  const has = S.blockItems > 0;
+  blockHud.classList.toggle('hidden', !has);
+  if (!has) return;
+  blockHud.classList.add('active');
+  blockState.textContent = `x${S.blockItems} | 按 ${keyLabel(KEYBINDS.placeBlock)} 放置`;
+}
+
 function updateBuffsUI(force) {
   const f = S.buffs.fireRate, s = S.buffs.spread, v = S.visionTimer;
   const key = `${f > 0 ? '1' : '0'}|${s > 0 ? '1' : '0'}|${v > 0 ? '1' : '0'}`;
@@ -840,7 +968,8 @@ function rectsOverlap(a, b, pad) {
 
 function buildWaveMap(wave) {
   if (!MAP_FILE || !MAP_FILE.layouts || !MAP_FILE.layouts.length) return null;
-  const layouts = MAP_FILE.layouts;
+  if (wave > PRESET_WAVES) return buildProceduralMap(wave);
+  const layouts = MAP_FILE.layouts.slice(0, PRESET_WAVES);
   const def = layouts[(wave - 1) % layouts.length];
   const cycle = Math.floor((wave - 1) / layouts.length);
   // 大地图：至少比当前视口大 2.4 倍，迫使玩家探索整张地图
@@ -897,6 +1026,76 @@ function buildWaveMap(wave) {
     cycle, wave, scale: fit,
     w, h, walls, spawn,
     theme: def.theme || {},
+    mm: null,
+  };
+  buildMapMinimap(map);
+  return map;
+}
+
+function buildProceduralMap(wave) {
+  // 第 6 关起：地图宽高每关 +320；墙体面积/最小尺寸/连通块按 5 关循环
+  const baseW = Math.round(Math.max(W * 2.4, 3200));
+  const baseH = Math.round(Math.max(H * 2.4, 2200));
+  const bonus = (wave - 6) * MAP_GROWTH;
+  const w = baseW + bonus, h = baseH + bonus;
+  const idx = ((wave - 6) % 5 + 5) % 5;
+  const areaPct = PROC_AREA_PCT[idx];
+  const minSize = PROC_MIN_SIZE[idx];
+  const clusterCount = PROC_CLUSTERS[idx];
+  const rng = seededRng(wave * 104729 + 911);
+  const spawn = { x: w / 2, y: h / 2 };
+  const walls = [];
+  const targetArea = w * h * areaPct;
+  const per = targetArea / clusterCount;
+  const maxSize = Math.min(w - PROC_MARGIN * 2, h - PROC_MARGIN * 2);
+
+  const clearOfSpawn = (r) => {
+    const nx = Math.max(r.x, Math.min(spawn.x, r.x + r.w));
+    const ny = Math.max(r.y, Math.min(spawn.y, r.y + r.h));
+    return Math.hypot(spawn.x - nx, spawn.y - ny) >= PROC_SPAWN_CLEAR;
+  };
+  const free = (r) => walls.every(o => !rectsOverlap(o, r, PROC_WALL_GAP));
+  const tryPlace = (r) => {
+    if (r.w < minSize || r.h < minSize) return false;
+    if (!clearOfSpawn(r)) return false;
+    if (!free(r)) return false;
+    walls.push(r);
+    return true;
+  };
+
+  for (let i = 0; i < clusterCount; i++) {
+    let placed = false;
+    for (let attempt = 0; attempt < 500 && !placed; attempt++) {
+      const shrink = Math.pow(0.94, Math.floor(attempt / 40));
+      const area = per * shrink;
+      const aspect = 0.55 + rng() * 1.0;
+      let ww = Math.sqrt(area * aspect);
+      let hh = area / Math.max(1, ww);
+      ww = Math.max(minSize, Math.min(maxSize, ww));
+      hh = Math.max(minSize, Math.min(maxSize, hh));
+      const x = PROC_MARGIN + rng() * Math.max(1, w - PROC_MARGIN * 2 - ww);
+      const y = PROC_MARGIN + rng() * Math.max(1, h - PROC_MARGIN * 2 - hh);
+      placed = tryPlace({ x: Math.round(x), y: Math.round(y), w: Math.round(ww), h: Math.round(hh) });
+    }
+    // 随机失败时，用最小尺寸在整个地图网格上兜底
+    if (!placed) {
+      const step = minSize + PROC_WALL_GAP;
+      for (let gy = PROC_MARGIN; gy <= h - PROC_MARGIN - minSize && !placed; gy += step) {
+        for (let gx = PROC_MARGIN; gx <= w - PROC_MARGIN - minSize && !placed; gx += step) {
+          placed = tryPlace({ x: gx, y: gy, w: minSize, h: minSize });
+        }
+      }
+    }
+  }
+
+  const map = {
+    id: 'proc-' + wave,
+    name: '裂隙回廊 ' + wave + ' · ' + Math.round(areaPct * 100) + '%',
+    index: idx,
+    cycle: Math.floor((wave - 6) / 5),
+    wave, scale: 1,
+    w, h, walls, spawn,
+    theme: { floor: '#0a0c12', grid: 'rgba(95,184,255,.045)', wall: '#202737', edge: 'rgba(232,244,255,.16)' },
     mm: null,
   };
   buildMapMinimap(map);
@@ -1030,6 +1229,175 @@ function viewRect() {
   return { l: S.cam.x - vw / 2, r: S.cam.x + vw / 2, t: S.cam.y - vh / 2, b: S.cam.y + vh / 2, w: vw, h: vh };
 }
 
+// —— 方块：放置 / 质量碰撞 / 血量 ——
+function rectsOverlapXY(ax, ay, aw, ah, bx, by, bw, bh) {
+  return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+}
+
+function circleRectOverlap(cx, cy, cr, rx, ry, rw, rh) {
+  const nx = Math.max(rx, Math.min(rx + rw, cx));
+  const ny = Math.max(ry, Math.min(ry + rh, cy));
+  const dx = cx - nx, dy = cy - ny;
+  return dx * dx + dy * dy < cr * cr;
+}
+
+function blockCanMove(block, bx, by) {
+  const map = S.map; if (!map) return false;
+  if (bx < 16 || by < 16 || bx + block.w > map.w - 16 || by + block.h > map.h - 16) return false;
+  const pts = [[bx + 4, by + 4], [bx + block.w - 4, by + 4], [bx + 4, by + block.h - 4],
+               [bx + block.w - 4, by + block.h - 4], [bx + block.w / 2, by + block.h / 2]];
+  for (const q of pts) if (hitsWall(q[0], q[1], 2)) return false;
+  for (const b of S.blocks) {
+    if (b !== block && rectsOverlapXY(bx, by, block.w, block.h, b.x, b.y, b.w, b.h)) return false;
+  }
+  return true;
+}
+
+// 质量分数：方块重 10，玩家 2，堡垒 3，Boss 6；普通怪推不动
+function resolveCircleBlocks(ent, canPush) {
+  if (!S.blocks.length || !ent) return;
+  const entMass = ent === S.player ? 2 : (ent.mass || 1);
+  for (let pass = 0; pass < 2; pass++) {
+    for (const bl of S.blocks) {
+      const nx = Math.max(bl.x, Math.min(ent.x, bl.x + bl.w));
+      const ny = Math.max(bl.y, Math.min(ent.y, bl.y + bl.h));
+      let dx = ent.x - nx, dy = ent.y - ny;
+      let d2 = dx * dx + dy * dy;
+      if (d2 >= ent.r * ent.r) continue;
+      let ox, oy, depth;
+      if (d2 < 0.0001) {
+        const left = ent.x - bl.x, right = bl.x + bl.w - ent.x;
+        const top = ent.y - bl.y, bottom = bl.y + bl.h - ent.y;
+        const m = Math.min(left, right, top, bottom);
+        if (m === left) { ox = -1; oy = 0; depth = left + ent.r; }
+        else if (m === right) { ox = 1; oy = 0; depth = right + ent.r; }
+        else if (m === top) { ox = 0; oy = -1; depth = top + ent.r; }
+        else { ox = 0; oy = 1; depth = bottom + ent.r; }
+      } else {
+        const d = Math.sqrt(d2);
+        ox = dx / d; oy = dy / d; depth = ent.r - d;
+      }
+      if (depth <= 0) continue;
+
+      let blockMove = 0;
+      if (canPush) {
+        const frac = entMass / (entMass + bl.mass);
+        blockMove = depth * frac;
+        const bx = bl.x - ox * blockMove;
+        const by = bl.y - oy * blockMove;
+        if (blockMove > 0.001 && blockCanMove(bl, bx, by)) {
+          bl.x = bx; bl.y = by;
+          if (ent !== S.player) {
+            const tx = S.player.x - ent.x, ty = S.player.y - ent.y;
+            const tl = Math.hypot(tx, ty) || 1;
+            const head = Math.max(0, -(tx / tl * ox + ty / tl * oy));
+            ent.pushSlow = 0.22;
+            ent.pushSlowFactor = head > 0.55 ? 0.42 : 0.72;
+          }
+        } else {
+          blockMove = 0;
+        }
+      }
+      const rem = depth - blockMove;
+      ent.x += ox * rem;
+      ent.y += oy * rem;
+    }
+  }
+}
+
+function blockPlacementValid(x, y, size) {
+  const map = S.map; if (!map) return false;
+  if (x < 20 || y < 20 || x + size > map.w - 20 || y + size > map.h - 20) return false;
+  const pts = [[x + 4, y + 4], [x + size - 4, y + 4], [x + 4, y + size - 4],
+               [x + size - 4, y + size - 4], [x + size / 2, y + size / 2]];
+  for (const q of pts) if (hitsWall(q[0], q[1], 2)) return false;
+  const p = S.player;
+  if (circleRectOverlap(p.x, p.y, p.r + 3, x, y, size, size)) return false;
+  for (const b of S.blocks) if (rectsOverlapXY(x, y, size, size, b.x, b.y, b.w, b.h)) return false;
+  return true;
+}
+
+function placeBlock() {
+  if (!S.running || S.over || S.paused || !S.map) return;
+  if (S.blockItems <= 0) return;
+  const p = S.player;
+  const size = BLOCK_SIZE;
+  const dirx = Math.cos(p.angle), diry = Math.sin(p.angle);
+  const dists = [p.r + 38, p.r + 54, p.r + 70, p.r + 86];
+  for (const dist of dists) {
+    const bx = p.x + dirx * dist - size / 2;
+    const by = p.y + diry * dist - size / 2;
+    if (!blockPlacementValid(bx, by, size)) continue;
+    S.blocks.push({
+      x: bx, y: by, w: size, h: size,
+      hp: BLOCK_HP, maxHp: BLOCK_HP, mass: BLOCK_MASS, hitFlash: 0
+    });
+    S.blockItems--;
+    for (let i = 0; i < 12; i++) {
+      const a = Math.random() * Math.PI * 2, sp = 40 + Math.random() * 110;
+      S.particles.push({ x: bx + size / 2, y: by + size / 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: .4, maxLife: .4, color: '155,231,255', size: 2 });
+    }
+    sfx(360, 0.12, 'square', 0.035);
+    S.banner = { text: '方块已放置', life: 0.7 };
+    updateBlockHUD();
+    updateMobileHUD();
+    return;
+  }
+  S.banner = { text: '前方空间不足', life: 0.7 };
+  sfx(160, 0.08, 'square', 0.025);
+}
+
+function damageBlock(bl, dmg) {
+  bl.hp -= dmg;
+  bl.hitFlash = 0.14;
+  for (let i = 0; i < 4; i++) {
+    const a = Math.random() * Math.PI * 2, sp = 20 + Math.random() * 70;
+    S.particles.push({ x: bl.x + bl.w / 2, y: bl.y + bl.h / 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: .25, maxLife: .25, color: '155,231,255', size: 1.5 });
+  }
+  if (bl.hp <= 0) {
+    const idx = S.blocks.indexOf(bl);
+    if (idx >= 0) {
+      S.blocks.splice(idx, 1);
+      for (let i = 0; i < 18; i++) {
+        const a = Math.random() * Math.PI * 2, sp = 60 + Math.random() * 180;
+        S.particles.push({ x: bl.x + bl.w / 2, y: bl.y + bl.h / 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: .5, maxLife: .5, color: '155,231,255', size: 2 + Math.random() * 3 });
+      }
+      S.shake = Math.max(S.shake, 5);
+      sfx(180, 0.2, 'sawtooth', 0.04);
+    }
+  }
+}
+
+function updateBlocks(dt) {
+  for (let i = S.blocks.length - 1; i >= 0; i--) {
+    const b = S.blocks[i];
+    if (b.hitFlash > 0) b.hitFlash -= dt;
+  }
+}
+
+function drawBlocks() {
+  if (!S.blocks.length) return;
+  for (const b of S.blocks) {
+    ctx.save();
+    const flash = b.hitFlash > 0;
+    ctx.fillStyle = flash ? 'rgba(200,245,255,.38)' : 'rgba(30,52,76,.88)';
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.strokeStyle = flash ? '#ffffff' : 'rgba(155,231,255,.78)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2);
+    ctx.strokeStyle = 'rgba(155,231,255,.22)'; ctx.lineWidth = 1;
+    ctx.strokeRect(b.x + 7, b.y + 7, b.w - 14, b.h - 14);
+    ctx.beginPath();
+    ctx.moveTo(b.x + b.w / 2, b.y + 7); ctx.lineTo(b.x + b.w / 2, b.y + b.h - 7);
+    ctx.moveTo(b.x + 7, b.y + b.h / 2); ctx.lineTo(b.x + b.w - 7, b.y + b.h / 2);
+    ctx.stroke();
+    const hpw = b.w - 8, hpr = Math.max(0, b.hp / b.maxHp);
+    ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(b.x + 4, b.y - 8, hpw, 5);
+    ctx.fillStyle = hpr > .45 ? '#9be7ff' : '#ff9d5c';
+    ctx.fillRect(b.x + 4, b.y - 8, hpw * hpr, 5);
+    ctx.restore();
+  }
+}
 function mouseWorld() {
   const z = S.cam.zoom || 1;
   return { x: S.cam.x + (S.mouse.x - W / 2) / z, y: S.cam.y + (S.mouse.y - H / 2) / z };
@@ -1068,15 +1436,18 @@ function loadWaveMap(wave) {
   for (const pu of S.powerups) { pu.x += dx; pu.y += dy; }
   for (const q of S.particles) { q.x += dx; q.y += dy; }
   for (const sw of S.shockwaves) { sw.x += dx; sw.y += dy; }
+  for (const pet of S.pets) { pet.x += dx; pet.y += dy; }
 
   S.map = map;
   p.x = map.spawn.x; p.y = map.spawn.y;
   S.pvx = 0; S.pvy = 0;
   S.prevX = p.x; S.prevY = p.y;
   S.pBullets = []; S.eBullets = [];
+  S.blocks = [];
   S.history = [];
   S.powerups = S.powerups.filter(pu => !pointInWalls(pu.x, pu.y, 10));
   S.echoes = S.echoes.filter(e => !pointInWalls(e.x, e.y, 0));
+  S.pets = S.pets.filter(pet => !pointInWalls(pet.x, pet.y, 0));
   updateCamera(0, true);
   return map;
 }
@@ -1103,11 +1474,15 @@ function nextWave() {
   sfx(520, 0.12, 'triangle', 0.04);
 
   const n = S.wave;
-  const total = Math.min(MAX_ENEMIES - (hasBoss ? 1 : 0), Math.round(14 + n * 6 + Math.max(0, n - 3) * 10));
+  const baseTotal = n <= PRESET_WAVES
+    ? Math.round(14 + n * 6 + Math.max(0, n - 3) * 10)
+    : 84 + (n - 6) * 20;
+  const total = Math.min(MAX_ENEMIES - (hasBoss ? 1 : 0), baseTotal);
   const shooters = Math.round(total * 0.20);
   const splitters = Math.round(total * 0.15);
-  const hunters = n >= 2 ? Math.max(0, total - Math.round(total * 0.45) - shooters - splitters) : 0;
-  const trackers = total - shooters - splitters - hunters;
+  const fortresses = n >= 5 ? Math.min(4, 1 + Math.floor((n - 5) / 3)) : 0;
+  const hunters = n >= 2 ? Math.max(0, total - Math.round(total * 0.45) - shooters - splitters - fortresses) : 0;
+  const trackers = Math.max(0, total - shooters - splitters - hunters - fortresses);
 
   const blindChance = n >= 4 ? Math.min(0.7, 0.35 + (n - 4) * 0.06) : 0;
   const types = [];
@@ -1115,6 +1490,7 @@ function nextWave() {
   for (let i = 0; i < shooters; i++) types.push(Math.random() < blindChance ? 'blinder' : 'shooter');
   for (let i = 0; i < splitters; i++) types.push('splitter');
   for (let i = 0; i < hunters; i++) types.push('hunter');
+  for (let i = 0; i < fortresses; i++) types.push('fortress');
   for (let i = types.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     const tmp = types[i]; types[i] = types[j]; types[j] = tmp;
@@ -1135,7 +1511,7 @@ function nextWave() {
     const ang = (i / Math.max(1, surroundTotal)) * Math.PI * 2 + (Math.random() - 0.5) * 0.2;
     const inner = i < innerCount;
     const pt = ringSpawnPoint(ang, inner ? innerMin : outerMin, inner ? innerMax : outerMax);
-    if (!pt) continue;
+    if (!pt) { types.push(type); continue; }
     spawnEnemy(type, (i % 14) * 55 + Math.random() * 60, false, pt);
   }
   for (const type of types) {
@@ -1200,7 +1576,7 @@ function spawnBoss() {
   const boss = {
     x: pt.x, y: pt.y, type: 'boss', r: 42, hp, maxHp: hp,
     speed: 32 + bossNum * 4, age: 0, hitFlash: 0,
-    fireCd: 2.0, ringCd: 3.0, delay: 0.8, color: '#ff3b5c', isBoss: true
+    fireCd: 2.0, ringCd: 3.0, delay: 0.8, color: '#ff3b5c', isBoss: true, mass: 6
   };
   S.enemies.push(boss);
   S.bossRef = boss;
@@ -1240,6 +1616,14 @@ function spawnEnemy(type, delay = 0, far = false, at = null) {
   else if (type === 'splitter') Object.assign(base, { r: 18, hp: 2, maxHp: 2, speed: 44 * waveScale, color: '#7ef9d0' });
   else if (type === 'mini') Object.assign(base, { r: 9, hp: 1, maxHp: 1, speed: 95 * waveScale, color: '#ff9d5c', delay: 0 });
   else if (type === 'hunter') Object.assign(base, { r: 13, hp: 1, maxHp: 1, speed: 85 * waveScale, color: '#ff9d5c' });
+  else if (type === 'fortress') Object.assign(base, { r: 26, hp: 18, maxHp: 18, speed: 26 * waveScale, color: '#9be7ff', isFortress: true, fireCd: 2.2, mass: 3 });
+
+  // 每个 wave 怪物血量 +10%
+  if (type !== 'boss') {
+    const hpScale = 1 + 0.1 * Math.max(0, S.wave - 1);
+    base.maxHp = Math.round(base.maxHp * hpScale * 10) / 10;
+    base.hp = base.maxHp;
+  }
   S.enemies.push(base);
 }
 
@@ -1250,11 +1634,23 @@ function triggerBomb() {
   if (!S.bombUnlocked || S.bombCd > 0) return;
   
   const stacks = S.bombStacks;
-  const radius = BOMB_RADIUS_BASE + 30 * (stacks - 1);
-  const baseForce = BOMB_FORCE_BASE + 100 * (stacks - 1);
-  S.bombCd = Math.max(0.8, BOMB_CD_BASE - 0.3 * (stacks - 1));
+  const radius = BOMB_RADIUS_BASE + 40 * (stacks - 1);
+  const baseForce = BOMB_FORCE_BASE + 120 * (stacks - 1);
+  S.bombCd = BOMB_CD_BASE;
   
   const p = S.player;
+
+  // 震伤并推开附近怪物
+  for (let i = S.enemies.length - 1; i >= 0; i--) {
+    const en = S.enemies[i];
+    const dx = en.x - p.x, dy = en.y - p.y, dist = Math.hypot(dx, dy);
+    if (dist < radius) {
+      en.hp -= 2 + stacks; en.hitFlash = 0.15; en.dormant = false;
+      const push = 260 * (1 - dist / radius) * (en.type === 'boss' ? 0.3 : 1);
+      if (dist > 0.1) { en.x += dx / dist * push; en.y += dy / dist * push; }
+      if (en.hp <= 0) killEnemy(i, 0.25);
+    }
+  }
   
   // 物理排斥
   for (const b of S.eBullets) {
@@ -1294,6 +1690,7 @@ function triggerBomb() {
 //  玩家普通射击
 // ============================================================
 function playerShoot(now) {
+  if (S.burrowTimer > 0) return;
   const cd = S.buffs.fireRate > 0 ? PLAYER_SHOT_CD_FAST : PLAYER_SHOT_CD;
   if (now - S.lastShot < cd * 1000) return;
   S.lastShot = now;
@@ -1364,6 +1761,7 @@ function toggleSniper() {
 }
 
 function sniperShoot() {
+  if (S.burrowTimer > 0) return;
   if (!S.sniperMode || S.sniperMag <= 0 || S.sniperCd > 0) {
     if (S.sniperCd > 0) { S.sniperFailFlash = 0.08; sfx(220, 0.04, 'square', 0.02); }
     return;
@@ -1417,6 +1815,7 @@ function sniperShoot() {
 //  飞刀逻辑
 // ============================================================
 function throwMelee() {
+  if (S.burrowTimer > 0) return;
   if (S.meleeCd > 0 || !S.meleeUnlocked || S.meleeCount < 2) return;
   
   S.meleeCount -= 2;
@@ -1446,6 +1845,29 @@ function throwMelee() {
   S.shake = Math.max(S.shake, 8);
   sfx(800, 0.1, 'sine', 0.04);
   updateMeleeHUD();
+}
+
+function activateBurrow() {
+  if (!S.running || S.over || S.paused) return;
+  if (S.burrowTimer > 0 || S.burrowCd > 0) return;
+  S.burrowTimer = BURROW_DURATION;
+  S.burrowCd = BURROW_CD;
+  S.isChargingMelee = false;
+  S.meleeCharge = 0;
+  S.sniperTriggered = false;
+  document.querySelectorAll('.mSkill.charging').forEach((b) => b.classList.remove('charging'));
+  S.banner = { text: `遁地 ${BURROW_DURATION}s`, life: 0.9 };
+  for (let i = 0; i < 18; i++) {
+    const a = Math.random() * Math.PI * 2, sp = 30 + Math.random() * 100;
+    S.particles.push({
+      x: S.player.x, y: S.player.y + 8,
+      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.5,
+      life: 0.5, maxLife: 0.5, color: '140,100,60', size: 2 + Math.random() * 3
+    });
+  }
+  sfx(220, 0.12, 'sine', 0.04);
+  setTimeout(() => sfx(140, 0.16, 'sine', 0.03), 70);
+  updateMobileHUD();
 }
 
 function updateKnives(dt) {
@@ -1548,13 +1970,14 @@ function spawnPowerupAt(x, y, force = false) {
   
   const r = Math.random();
   let type = 'fireRate';
-  if (r < 0.20) type = 'fireRate';
-  else if (r < 0.38) type = 'spread';
-  else if (r < 0.54) type = 'sniper';
-  else if (r < 0.66) type = 'melee';
-  else if (r < 0.76) type = 'heal';
-  else if (r < 0.86) type = 'vision';
-  else if (r < 0.94) type = 'bomb';
+  if (r < 0.19) type = 'fireRate';
+  else if (r < 0.36) type = 'spread';
+  else if (r < 0.51) type = 'sniper';
+  else if (r < 0.62) type = 'melee';
+  else if (r < 0.70) type = 'egg';
+  else if (r < 0.79) type = 'heal';
+  else if (r < 0.88) type = 'vision';
+  else if (r < 0.95) type = 'bomb';
   else type = 'secondChance';
 
   S.powerups.push({
@@ -1612,7 +2035,8 @@ function pickupPowerup(pu) {
   }
   
   if (pu.type === 'heal') {
-    if (S.player.hp < 3) {
+    const overflow = S.wave >= HP_OVERFLOW_WAVE;
+    if (overflow || S.player.hp < 3) {
       S.player.hp++;
       S.banner = { text: '恢复 1 HP', life: 1.0 };
       sfx(600, 0.1, 'sine', 0.04);
@@ -1662,9 +2086,37 @@ function pickupPowerup(pu) {
     return;
   }
 
+  if (pu.type === 'egg') {
+    if (S.eggStacks < PET_MAX_STACKS) {
+      S.eggStacks++;
+      S.banner = { text: MOBILE ? '获得：宠物蛋（点宠物召唤）' : `获得：宠物蛋（${keyLabel(KEYBINDS.summonPet)} 召唤）`, life: 1.4 };
+      sfx(620, 0.12, 'sine', 0.04);
+      setTimeout(() => sfx(940, 0.12, 'sine', 0.03), 80);
+    } else {
+      S.score += 50;
+      S.banner = { text: '宠物蛋已满 (+50分)', life: 1.0 };
+      sfx(400, 0.08, 'sine', 0.03);
+    }
+    updateMobileHUD();
+    return;
+  }
+
+  if (pu.type === 'block') {
+    S.blockItems = Math.min(5, S.blockItems + 1);
+    S.banner = { text: MOBILE ? '获得方块（点方块按钮放置）' : `获得方块（${keyLabel(KEYBINDS.placeBlock)} 放置）`, life: 1.2 };
+    sfx(560, 0.1, 'square', 0.03);
+    updateBlockHUD();
+    updateMobileHUD();
+    return;
+  }
+
   if (pu.type === 'vision') {
-    S.visionTimer = Math.min(VISION_DURATION * 2.2, S.visionTimer + VISION_DURATION);
-    S.banner = { text: '获得：广域视野', life: 1.2 };
+    const before = S.visionTimer;
+    S.visionTimer = Math.min(VISION_MAX_ACTIVE, before + VISION_DURATION);
+    const overflow = before + VISION_DURATION - S.visionTimer;
+    if (overflow > 0) S.visionBank = Math.min(VISION_BANK_MAX, S.visionBank + overflow);
+    saveVisionState(S.visionBank + S.visionTimer);
+    S.banner = { text: `+${VISION_DURATION}s 广域视野`, life: 1.2 };
     sfx(520, 0.12, 'sine', 0.03);
     setTimeout(() => sfx(780, 0.12, 'sine', 0.03), 80);
     setTimeout(() => sfx(1040, 0.16, 'sine', 0.025), 160);
@@ -1770,6 +2222,147 @@ function destroyEcho(echo) {
 }
 
 // ============================================================
+//  宠物
+// ============================================================
+function summonPets() {
+  if (!S.running || S.over || S.paused) return;
+  if (S.eggStacks <= 0 || S.petCd > 0) return;
+  const cap = S.eggStacks * PET_PER_CAST;
+  const room = cap - S.pets.length;
+  if (room <= 0) return;
+  const count = Math.min(PET_PER_CAST, room);
+  const p = S.player;
+  for (let i = 0; i < count; i++) {
+    const cfg = PET_TYPES[Math.floor(Math.random() * PET_TYPES.length)];
+    const a = Math.random() * Math.PI * 2;
+    const rad = 46 + Math.random() * 34;
+    S.pets.push({
+      x: p.x + Math.cos(a) * rad,
+      y: p.y + Math.sin(a) * rad,
+      r: 9, life: PET_LIFE, maxLife: PET_LIFE,
+      speed: cfg.speed, damage: cfg.damage, atkCdMax: cfg.atkCd,
+      attackCd: Math.random() * 0.3,
+      shape: cfg.shape, type: cfg.type,
+      orbit: Math.random() * Math.PI * 2, hitFlash: 0
+    });
+  }
+  for (let k = 0; k < 10; k++) {
+    const a = Math.random() * Math.PI * 2, sp = 30 + Math.random() * 90;
+    S.particles.push({ x: p.x, y: p.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.4, maxLife: 0.4, color: '255,209,92', size: 2 });
+  }
+  S.petCd = PET_CD;
+  S.shake = Math.max(S.shake, 3);
+  sfx(680, 0.1, 'triangle', 0.03);
+  setTimeout(() => sfx(1020, 0.1, 'triangle', 0.025), 70);
+  updateMobileHUD();
+}
+
+function updatePets(dt) {
+  if (!S.pets.length) return;
+  const p = S.player;
+  for (let i = S.pets.length - 1; i >= 0; i--) {
+    const pet = S.pets[i];
+    pet.life -= dt;
+    pet.orbit += dt * 1.7;
+    if (pet.hitFlash > 0) pet.hitFlash -= dt;
+    if (pet.life <= 0) {
+      for (let k = 0; k < 5; k++) {
+        const a = Math.random() * Math.PI * 2, sp = 20 + Math.random() * 60;
+        S.particles.push({ x: pet.x, y: pet.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: .35, maxLife: .35, color: '255,209,92', size: 1.5 });
+      }
+      S.pets.splice(i, 1);
+      continue;
+    }
+
+    let target = null, best = Infinity;
+    for (const en of S.enemies) {
+      if (en.delay > 0) continue;
+      const d = Math.hypot(en.x - pet.x, en.y - pet.y);
+      if (d < best) { best = d; target = en; }
+    }
+
+    let tx, ty;
+    if (target) { tx = target.x; ty = target.y; }
+    else { tx = p.x + Math.cos(pet.orbit) * 54; ty = p.y + Math.sin(pet.orbit) * 54; }
+    const dx = tx - pet.x, dy = ty - pet.y, d = Math.hypot(dx, dy) || 1;
+    const stop = target ? (pet.r + target.r - 2) : 2;
+    if (d > stop) {
+      const sp = Math.min(pet.speed * dt, d);
+      pet.x += dx / d * sp;
+      pet.y += dy / d * sp;
+    }
+    if (S.map) {
+      pet.x = Math.max(pet.r, Math.min(S.map.w - pet.r, pet.x));
+      pet.y = Math.max(pet.r, Math.min(S.map.h - pet.r, pet.y));
+      resolveCircleWalls(pet);
+      resolveCircleBlocks(pet, false);
+    }
+
+    pet.attackCd -= dt;
+    if (target) {
+      const dd = Math.hypot(target.x - pet.x, target.y - pet.y);
+      if (dd < pet.r + target.r + 6 && pet.attackCd <= 0) {
+        pet.attackCd = pet.atkCdMax;
+        target.hp -= pet.damage; target.hitFlash = 0.12; target.dormant = false;
+        for (let k = 0; k < 3; k++) {
+          const a = Math.random() * Math.PI * 2, sp = 30 + Math.random() * 60;
+          S.particles.push({ x: target.x, y: target.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: .2, maxLife: .2, color: '255,209,92', size: 1.5 });
+        }
+        if (target.hp <= 0) {
+          const idx = S.enemies.indexOf(target);
+          if (idx >= 0) killEnemy(idx, 0.15);
+        }
+      }
+    }
+  }
+}
+
+function drawPets() {
+  if (!S.pets.length) return;
+  for (const pet of S.pets) {
+    const alpha = Math.min(1, pet.life / 1.6);
+    ctx.save();
+    ctx.translate(pet.x, pet.y);
+    ctx.globalAlpha = alpha;
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 24);
+    g.addColorStop(0, 'rgba(255,209,92,.30)');
+    g.addColorStop(1, 'rgba(255,209,92,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, 24, 0, 7); ctx.fill();
+
+    ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 12;
+    ctx.fillStyle = pet.hitFlash > 0 ? '#fff6d0' : '#ffd15c';
+    ctx.strokeStyle = '#fff3c4'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if (pet.shape === 'tri') {
+      for (let i = 0; i < 3; i++) {
+        const a = i / 3 * Math.PI * 2 - Math.PI / 2;
+        const x = Math.cos(a) * pet.r, y = Math.sin(a) * pet.r;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+    } else if (pet.shape === 'square') {
+      ctx.rect(-pet.r * .8, -pet.r * .8, pet.r * 1.6, pet.r * 1.6);
+    } else if (pet.shape === 'hex') {
+      for (let i = 0; i < 6; i++) {
+        const a = i / 6 * Math.PI * 2;
+        const x = Math.cos(a) * pet.r, y = Math.sin(a) * pet.r;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+    } else {
+      ctx.moveTo(0, -pet.r); ctx.lineTo(pet.r, 0); ctx.lineTo(0, pet.r); ctx.lineTo(-pet.r, 0);
+      ctx.closePath();
+    }
+    ctx.fill(); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(70,45,0,.75)';
+    ctx.beginPath(); ctx.arc(0, 0, 2.1, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ============================================================
 //  Boss 更新
 // ============================================================
 function updateBoss(en, dt) {
@@ -1779,13 +2372,16 @@ function updateBoss(en, dt) {
   const d = Math.hypot(dx, dy) || 1;
   const nx = dx / d, ny = dy / d;
 
-  en.x += nx * en.speed * dt;
-  en.y += ny * en.speed * dt;
+  let bossSpeedMul = 1;
+  if (en.pushSlow > 0) { en.pushSlow -= dt; bossSpeedMul = en.pushSlowFactor || 0.6; }
+  en.x += nx * en.speed * bossSpeedMul * dt;
+  en.y += ny * en.speed * bossSpeedMul * dt;
   if (S.map) {
     en.x = Math.max(en.r, Math.min(S.map.w - en.r, en.x));
     en.y = Math.max(en.r, Math.min(S.map.h - en.r, en.y));
     resolveCircleWalls(en);
     slideAlongWalls(en, nx, ny, dt);
+    resolveCircleBlocks(en, true);
   }
 
   en.ringCd -= dt;
@@ -1819,7 +2415,7 @@ function updateBoss(en, dt) {
     sfx(300, 0.08, 'square', 0.03);
   }
 
-  if (p.invuln <= 0 && d < en.r + p.r) hurtPlayer();
+  if (!playerImmune() && d < en.r + p.r) hurtPlayer();
 }
 
 // ============================================================
@@ -1848,7 +2444,11 @@ function update(dt) {
   if (p.invuln > 0) p.invuln -= dt;
   if (S.echoCd > 0) S.echoCd -= dt;
   if (S.detonateCd > 0) S.detonateCd = Math.max(0, S.detonateCd - dt);
+  if (S.petCd > 0) S.petCd = Math.max(0, S.petCd - dt);
   if (S.visionTimer > 0) S.visionTimer = Math.max(0, S.visionTimer - dt);
+  if (S.goldenTimer > 0) S.goldenTimer = Math.max(0, S.goldenTimer - dt);
+  if (S.burrowTimer > 0) S.burrowTimer = Math.max(0, S.burrowTimer - dt);
+  if (S.burrowCd > 0) S.burrowCd = Math.max(0, S.burrowCd - dt);
   if (S.blindLock > 0) S.blindLock = Math.max(0, S.blindLock - dt);
   if (S.blindTimer > 0) S.blindTimer = Math.max(0, S.blindTimer - dt);
   S.blindAlpha += ((S.blindTimer > 0 ? 1 : 0) - S.blindAlpha) * Math.min(1, dt * 4);
@@ -1955,6 +2555,7 @@ function update(dt) {
     p.x = Math.max(p.r + 6, Math.min(S.map.w - p.r - 6, p.x));
     p.y = Math.max(p.r + 6, Math.min(S.map.h - p.r - 6, p.y));
     resolveCircleWalls(p);
+    resolveCircleBlocks(p, true);
   }
   // 碰撞后按实际位移修正速度，避免贴着墙抖动
   if (dt > 0.0001) {
@@ -2049,6 +2650,7 @@ function update(dt) {
 
     let speedMul = 1;
     for (const e of S.echoes) { if (Math.hypot(en.x - e.x, en.y - e.y) < SLOW_RADIUS) { speedMul = 0.5; break; } }
+    if (en.pushSlow > 0) { en.pushSlow -= dt; speedMul *= (en.pushSlowFactor || 0.6); }
 
     const dx = p.x - en.x, dy = p.y - en.y, d = Math.hypot(dx, dy) || 1;
     const nx = dx / d, ny = dy / d;
@@ -2065,9 +2667,25 @@ function update(dt) {
       }
     } else if (en.type === 'tracker' || en.type === 'mini' || en.type === 'splitter') {
       en.x += nx * en.speed * speedMul * dt; en.y += ny * en.speed * speedMul * dt;
+    } else if (en.type === 'fortress') {
+      // 堡垒：缓慢推进，按玩家速度预测落点精确射击
+      en.x += nx * en.speed * speedMul * dt;
+      en.y += ny * en.speed * speedMul * dt;
+      en.fireCd -= dt;
+      if (en.fireCd <= 0 && d < 950) {
+        en.fireCd = 2.6 + Math.random() * 0.9;
+        const lead = 0.4;
+        const tx = p.x + S.pvx * lead;
+        const ty = p.y + S.pvy * lead;
+        const aa = Math.atan2(ty - en.y, tx - en.x);
+        S.eBullets.push({
+          x: en.x, y: en.y, vx: Math.cos(aa) * 430, vy: Math.sin(aa) * 430,
+          r: 7, life: 3.8, color: '#9be7ff', fortressShot: true
+        });
+        sfx(230, 0.1, 'square', 0.03);
+      }
     } else if (en.type === 'shooter' || en.type === 'blinder') {
-      const isBlind = en.type === 'blinder';
-      if (d < 230) { en.x -= nx * en.speed * speedMul * dt; en.y -= ny * en.speed * speedMul * dt; }
+      const isBlind = en.type === 'blinder';      if (d < 230) { en.x -= nx * en.speed * speedMul * dt; en.y -= ny * en.speed * speedMul * dt; }
       else if (d > 330) { en.x += nx * en.speed * speedMul * dt; en.y += ny * en.speed * speedMul * dt; }
       else { en.x += -ny * en.speed * 0.5 * speedMul * dt; en.y += nx * en.speed * 0.5 * speedMul * dt; }
       en.fireCd -= dt;
@@ -2091,11 +2709,15 @@ function update(dt) {
       en.y = Math.max(en.r, Math.min(S.map.h - en.r, en.y));
       resolveCircleWalls(en);
       slideAlongWalls(en, nx, ny, dt);
+      resolveCircleBlocks(en, en.type === 'fortress');
     }
 
     const pd = Math.hypot(p.x - en.x, p.y - en.y);
-    if (p.invuln <= 0 && pd < en.r + p.r) { hurtPlayer(); en.x -= nx * 40; en.y -= ny * 40; }
+    if (!playerImmune() && pd < en.r + p.r) { hurtPlayer(); en.x -= nx * 40; en.y -= ny * 40; }
   }
+
+  updatePets(dt);
+  updateBlocks(dt);
 
   for (let i = S.pBullets.length - 1; i >= 0; i--) {
     const b = S.pBullets[i];
@@ -2224,6 +2846,20 @@ function update(dt) {
       }
       S.eBullets.splice(i, 1); continue;
     }
+    let hitBlock = false;
+    for (const bl of S.blocks) {
+      if (b.x > bl.x && b.x < bl.x + bl.w && b.y > bl.y && b.y < bl.y + bl.h) {
+        damageBlock(bl, b.fortressShot ? 22 : 6);
+        for (let k = 0; k < 4; k++) {
+          const a = Math.random() * Math.PI * 2, sp = 30 + Math.random() * 80;
+          S.particles.push({ x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.25, maxLife: 0.25, color: '155,231,255', size: 1.5 });
+        }
+        S.eBullets.splice(i, 1);
+        hitBlock = true;
+        break;
+      }
+    }
+    if (hitBlock) continue;
     let hitEcho = false;
     for (const e of S.echoes) {
       const dx = b.x - e.x, dy = b.y - e.y;
@@ -2236,14 +2872,16 @@ function update(dt) {
     if (hitEcho) continue;
     const dx = b.x - p.x, dy = b.y - p.y, rr = b.r + p.r;
     if (dx * dx + dy * dy < rr * rr) {
-      if (b.blind) {
+      if (playerImmune()) {
+        S.eBullets.splice(i, 1);
+      } else if (b.blind) {
         applyBlind();
         for (let k = 0; k < 8; k++) {
           const a = Math.random() * Math.PI * 2, sp = 40 + Math.random() * 80;
           S.particles.push({ x: p.x, y: p.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.4, maxLife: 0.4, color: '255,209,102', size: 2 });
         }
         S.eBullets.splice(i, 1);
-      } else if (p.invuln <= 0) {
+      } else {
         hurtPlayer();
         S.eBullets.splice(i, 1);
       }
@@ -2303,11 +2941,19 @@ function killEnemy(idx, energyGain) {
 
   for (let i = 0; i < 14; i++) {
     const a = Math.random() * Math.PI * 2, sp = 50 + Math.random() * 180;
-    S.particles.push({ x: en.x, y: en.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: .5, maxLife: .5, color: en.type === 'shooter' ? '192,132,252' : en.type === 'splitter' ? '126,249,208' : en.type === 'hunter' ? '255,157,92' : '255,92,122', size: 2 + Math.random() * 3 });
+    S.particles.push({ x: en.x, y: en.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: .5, maxLife: .5, color: en.type === 'shooter' ? '192,132,252' : en.type === 'splitter' ? '126,249,208' : en.type === 'hunter' ? '255,157,92' : en.type === 'fortress' ? '155,231,255' : '255,92,122', size: 2 + Math.random() * 3 });
   }
   S.particles.push({ x: en.x, y: en.y, vx: 0, vy: 0, life: .3, maxLife: .3, color: '255,255,255', size: en.r * 2, ring: true });
 
-  if (Math.random() < POWERUP_DROP_CHANCE) spawnPowerupAt(en.x, en.y);
+  if (en.type === 'fortress') {
+    // 堡垒必掉方块
+    S.powerups.push({
+      x: en.x, y: en.y, type: 'block', life: POWERUP_LIFE, maxLife: POWERUP_LIFE,
+      bob: Math.random() * Math.PI * 2, spawnT: 0
+    });
+  } else if (Math.random() < POWERUP_DROP_CHANCE) {
+    spawnPowerupAt(en.x, en.y);
+  }
 
   if (en.type === 'splitter') {
     for (let i = 0; i < 2; i++) {
@@ -2328,6 +2974,7 @@ function killEnemy(idx, energyGain) {
 
 function applyBlind() {
   if (!S.running || S.over) return;
+  if (playerImmune()) return;
   if (S.blindLock > 0) return;          // 3 秒内不能再次叠加
   S.blindTimer = BLIND_DURATION;
   S.blindLock = BLIND_COOLDOWN;
@@ -2335,8 +2982,12 @@ function applyBlind() {
   setTimeout(() => sfx(110, 0.35, 'sine', 0.025), 110);
 }
 
+function playerImmune() {
+  return !S.player || S.player.invuln > 0 || S.burrowTimer > 0 || S.goldenTimer > 0;
+}
+
 function hurtPlayer() {
-  if (S.player.invuln > 0) return;
+  if (playerImmune()) return;
   S.player.hp--;
   
   if (S.player.hp <= 0 && S.secondChance) {
@@ -2380,6 +3031,7 @@ function hurtPlayer() {
 
 function gameOver() {
   S.over = true; S.running = false;
+  bankVisionOnRunEnd();
   setTimeout(showGameOver, 500);
 }
 
@@ -2417,6 +3069,8 @@ function render() {
     ctx.beginPath(); ctx.arc(sw.x, sw.y, sw.r * 0.8, 0, 7); ctx.stroke();
   }
   ctx.globalAlpha = 1;
+
+  drawBlocks();
 
   for (const e of S.echoes) {
     if (!e.path.length) continue;
@@ -2498,6 +3152,8 @@ function render() {
     if (en.type === 'boss') drawBoss(en); else drawEnemy(en);
   }
 
+  drawPets();
+
   for (const b of S.pBullets) {
     if (b.isSniper) {
       if (b.trail && b.trail.length > 1) {
@@ -2543,6 +3199,7 @@ function render() {
 
   drawPowerups();
   drawPlayer();
+  drawPlayerStatusAuras();
   drawSniperBarrel();
   
   // 蓄力特效
@@ -2792,7 +3449,7 @@ function drawMinimap() {
 
 // —— 技能状态环：圆环进度 + 中心图标，未生效淡出、生效淡入 ——
 function getSkillHudStates() {
-  const bombMax = Math.max(0.8, BOMB_CD_BASE - 0.3 * (Math.max(1, S.bombStacks) - 1));
+  const bombMax = BOMB_CD_BASE;
   return [
     {
       id: 'echo', label: '残影', color: '95,184,255',
@@ -2826,6 +3483,19 @@ function getSkillHudStates() {
         : (S.meleeCd > 0 ? 1 - S.meleeCd / MELEE_CD : (S.meleeCount >= 2 ? 1 : 0))
     },
     {
+      id: 'pet', label: '宠物', color: '255,209,92',
+      show: S.eggStacks > 0 && (S.pets.length > 0 || S.petCd > 0),
+      active: S.eggStacks > 0 && S.petCd <= 0 && S.pets.length < S.eggStacks * PET_PER_CAST,
+      progress: S.petCd > 0 ? 1 - S.petCd / PET_CD : Math.min(1, S.pets.length / Math.max(1, S.eggStacks * PET_PER_CAST))
+    },
+    {
+      id: 'burrow', label: '遁地', color: '126,249,208',
+      show: S.burrowTimer > 0 || S.burrowCd > 0,
+      active: S.burrowTimer <= 0 && S.burrowCd <= 0,
+      progress: S.burrowTimer > 0 ? S.burrowTimer / BURROW_DURATION
+        : (S.burrowCd > 0 ? 1 - S.burrowCd / BURROW_CD : 1)
+    },
+    {
       id: 'focus', label: '精准', color: '126,249,208',
       show: !!S.focusActive,
       active: !!S.focusActive,
@@ -2835,7 +3505,7 @@ function getSkillHudStates() {
       id: 'vision', label: '视野', color: '192,132,252',
       show: S.visionTimer > 0,
       active: S.visionTimer > 0,
-      progress: Math.min(1, S.visionTimer / VISION_DURATION)
+      progress: Math.min(1, S.visionTimer / VISION_MAX_ACTIVE)
     },
     {
       id: 'second', label: '免死', color: '0,255,204',
@@ -2987,6 +3657,23 @@ function drawSkillGlyph(id, x, y, r, color, alpha) {
       ctx.moveTo(s * r * 0.95, 0); ctx.lineTo(s * r * 1.35, 0);
       ctx.stroke();
     }
+  } else if (id === 'pet') {
+    // 宠物蛋
+    ctx.beginPath(); ctx.ellipse(0, 0, r * 0.62, r * 0.82, 0, 0, 7); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.3, -r * 0.12);
+    ctx.lineTo(-r * 0.05, 0);
+    ctx.lineTo(-r * 0.24, r * 0.16);
+    ctx.stroke();
+  } else if (id === 'burrow') {
+    // 土丘 + 向下箭头
+    ctx.beginPath();
+    ctx.arc(0, r * 0.3, r * 0.82, Math.PI, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 0.95); ctx.lineTo(0, r * 0.45);
+    ctx.moveTo(-r * 0.38, r * 0.08); ctx.lineTo(0, r * 0.5); ctx.lineTo(r * 0.38, r * 0.08);
+    ctx.stroke();
   } else if (id === 'second') {
     ctx.beginPath();
     ctx.moveTo(0, r * 0.45);
@@ -3119,6 +3806,32 @@ function drawSniperBarrel() {
 
   const x1 = p.x + Math.cos(a) * (p.r - 2), y1 = p.y + Math.sin(a) * (p.r - 2);
   const x2 = p.x + Math.cos(a) * len, y2 = p.y + Math.sin(a) * len;
+
+  // 手机狙击：枪口红外辅助射线（遇墙截断）
+  if (MOBILE) {
+    const maxDist = 1400;
+    const sx = p.x + Math.cos(a) * (p.r + 22), sy = p.y + Math.sin(a) * (p.r + 22);
+    const ex = p.x + Math.cos(a) * maxDist, ey = p.y + Math.sin(a) * maxDist;
+    let hitT = 1;
+    if (S.map) {
+      for (const wl of S.map.walls) {
+        const t = segRectT(sx, sy, ex, ey, wl, 0);
+        if (t >= 0 && t < hitT) hitT = t;
+      }
+    }
+    const lx = sx + (ex - sx) * hitT, ly = sy + (ey - sy) * hitT;
+    ctx.save();
+    ctx.globalAlpha = 0.55 + 0.18 * Math.sin(S.gameTime * 9);
+    ctx.strokeStyle = 'rgba(255,74,74,.8)';
+    ctx.shadowColor = '#ff3b3b'; ctx.shadowBlur = 10;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([12, 7]);
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(lx, ly); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#ff4a4a';
+    ctx.beginPath(); ctx.arc(lx, ly, 3.2, 0, 7); ctx.fill();
+    ctx.restore();
+  }
 
   ctx.strokeStyle = cdDim ? '#8fa8bd' : '#e8f4ff'; ctx.lineWidth = 3; ctx.lineCap = 'round';
   if (!cdDim) { ctx.shadowColor = '#9be7ff'; ctx.shadowBlur = 8; }
@@ -3348,6 +4061,24 @@ function drawPowerups() {
         ctx.stroke();
       }
       ctx.lineCap = 'butt';
+    } else if (pu.type === 'egg') {
+      // 金色宠物蛋
+      ctx.fillStyle = def.color; ctx.shadowColor = def.color; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.ellipse(0, 1, 8, 10, 0, 0, 7); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255,255,255,.65)';
+      ctx.beginPath(); ctx.ellipse(-2.5, -3.5, 2, 3, -0.3, 0, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(120,80,20,.65)'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(-4, -1); ctx.lineTo(-2, 1); ctx.lineTo(0, -1); ctx.lineTo(2, 1); ctx.stroke();
+    } else if (pu.type === 'block') {
+      // 方块掉落
+      ctx.fillStyle = 'rgba(155,231,255,.25)';
+      ctx.strokeStyle = def.color; ctx.lineWidth = 2;
+      ctx.shadowColor = def.color; ctx.shadowBlur = 10;
+      ctx.fillRect(-9, -9, 18, 18); ctx.strokeRect(-9, -9, 18, 18);
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(-9, -3); ctx.lineTo(9, -3); ctx.moveTo(-3, -9); ctx.lineTo(-3, 9); ctx.stroke();
     }
     ctx.restore();
   }
@@ -3386,6 +4117,52 @@ function drawPlayer() {
   ctx.closePath(); ctx.fillStyle = '#0a0b10'; ctx.fill();
 }
 
+function drawPlayerStatusAuras() {
+  const p = S.player; if (!p) return;
+
+  if (S.burrowTimer > 0) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.globalAlpha = 0.62;
+    ctx.fillStyle = '#6b4a2a';
+    ctx.beginPath(); ctx.ellipse(0, p.r * 0.8, p.r * 1.7, p.r * 0.75, 0, 0, 7); ctx.fill();
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = 'rgba(255,209,92,.8)';
+    ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.arc(0, 0, p.r + 14, 0, 7); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#ffe9b0';
+    ctx.font = '800 9px -apple-system, "PingFang SC", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(`遁地 ${S.burrowTimer.toFixed(1)}`, 0, -p.r - 16);
+    ctx.restore();
+  }
+
+  if (S.goldenTimer > 0) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    const a = 0.55 + 0.22 * Math.sin(S.gameTime * 8);
+    ctx.globalAlpha = a;
+    ctx.strokeStyle = '#ffd15c';
+    ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 18;
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, p.r + 12, 0, 7); ctx.stroke();
+    for (let i = 0; i < 6; i++) {
+      const ang = i / 6 * Math.PI * 2 + S.gameTime * 1.1;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(ang) * (p.r + 15), Math.sin(ang) * (p.r + 15));
+      ctx.lineTo(Math.cos(ang) * (p.r + 22), Math.sin(ang) * (p.r + 22));
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#ffe9b0';
+    ctx.font = '800 9px -apple-system, "PingFang SC", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(`金身 ${S.goldenTimer.toFixed(1)}`, 0, -p.r - 18);
+    ctx.restore();
+  }
+}
+
 function drawEnemy(en) {
   ctx.save(); ctx.translate(en.x, en.y);
   const flash = en.hitFlash > 0;
@@ -3393,6 +4170,7 @@ function drawEnemy(en) {
     en.type === 'blinder' ? '255,209,102' :
     en.type === 'splitter' ? '126,249,208' :
     en.type === 'hunter' ? '255,157,92' :
+    en.type === 'fortress' ? '155,231,255' :
     en.type === 'mini' ? '255,157,92' : '255,92,122';
   if (S.enemies.length <= 120) {
     const g = ctx.createRadialGradient(0, 0, 0, 0, 0, en.r * 2.4);
@@ -3430,6 +4208,28 @@ function drawEnemy(en) {
     }
     ctx.closePath(); ctx.fillStyle = flash ? '#fff' : en.color; ctx.fill();
     ctx.fillStyle = 'rgba(10,11,16,.5)'; ctx.beginPath(); ctx.arc(0, 0, en.r * .35, 0, 7); ctx.fill();
+  } else if (en.type === 'fortress') {
+    // 堡垒：不旋转的重型八角炮台
+    ctx.rotate(-en.age * 1.2);
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const a = i / 8 * Math.PI * 2 + Math.PI / 8;
+      const x = Math.cos(a) * en.r * 1.05, y = Math.sin(a) * en.r * 1.05;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = flash ? '#fff' : en.color; ctx.fill();
+    ctx.strokeStyle = 'rgba(10,20,30,.75)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = 'rgba(18,32,48,.88)';
+    ctx.fillRect(-en.r * .48, -en.r * .48, en.r * .96, en.r * .96);
+    const aim = Math.atan2(S.player.y - en.y, S.player.x - en.x);
+    ctx.save();
+    ctx.rotate(aim);
+    ctx.fillStyle = 'rgba(220,250,255,.9)';
+    ctx.fillRect(en.r * .35, -3.5, en.r * .95, 7);
+    ctx.restore();
+    ctx.fillStyle = 'rgba(255,255,255,.65)';
+    ctx.beginPath(); ctx.arc(0, 0, en.r * .18, 0, 7); ctx.fill();
   }
   if (en.type === 'blinder') {
     ctx.save();
@@ -3455,6 +4255,7 @@ function loop(ts) {
   let dt = (ts - lastTs) / 1000;
   lastTs = ts;
   if (dt > 0.05) dt = 0.05;
+  if (MOBILE && window.innerHeight > window.innerWidth) { render(); return; }
   if (S.running && !S.over && !S.paused && S.player) update(dt);
   render();
 }
@@ -3476,6 +4277,7 @@ function togglePause() {
 
 function showPause() {
   currentUI = 'pause';
+  overlay.classList.remove('scroll');
   overlay.innerHTML = `
     <p class="dead" style="color:#5fb8ff">PAUSED</p>
     <h2>已暂停</h2>
@@ -3493,6 +4295,7 @@ function showPause() {
 
 function showSettings(returnTo) {
   settingsReturn = returnTo; currentUI = 'settings'; bindingAction = null;
+  overlay.classList.remove('scroll');
   let rows = '';
   for (const action in BIND_LABELS) {
     rows += `<div class="bindRow"><span>${BIND_LABELS[action]}</span><button class="bindKey" data-bind="${action}">${keyLabel(KEYBINDS[action])}</button></div>`;
@@ -3568,6 +4371,9 @@ window.addEventListener('keydown', (e) => {
   if (k === KEYBINDS.toggleSniper && !e.repeat) toggleSniper();
   if (k === KEYBINDS.sniperShoot && !e.repeat) sniperShoot();
   if (k === KEYBINDS.blow && !e.repeat) triggerBomb();
+  if (k === KEYBINDS.summonPet && !e.repeat) summonPets();
+  if (k === KEYBINDS.placeBlock && !e.repeat) placeBlock();
+  if (k === KEYBINDS.burrow && !e.repeat) activateBurrow();
   if (k === KEYBINDS.toggleMap && !e.repeat) { e.preventDefault(); S.mini.global = true; updateMinimapLabel(); }
   if ((k === KEYBINDS.pause || k === 'escape') && !e.repeat) togglePause();
 }, { passive: false });
@@ -3669,6 +4475,7 @@ canvas.addEventListener('touchend', (e) => {
 // ============================================================
 const joyMoveEl = document.getElementById('joyMove');
 const joyAimEl = document.getElementById('joyAim');
+const mobilePauseEl = document.getElementById('mobilePause');
 const mSkillEls = {};
 document.querySelectorAll('.mSkill').forEach((b) => { mSkillEls[b.dataset.skill] = b; });
 const mSub = (name) => (mSkillEls[name] ? mSkillEls[name].querySelector('.sub') : null);
@@ -3763,15 +4570,21 @@ Object.keys(mSkillEls).forEach((skill) => {
       e.preventDefault(); e.stopPropagation();
       if (!mobileCanUse()) return;
       if (skill === 'echo') spawnEcho();
+      else if (skill === 'pet') summonPets();
+      else if (skill === 'block') placeBlock();
+      else if (skill === 'burrow') activateBurrow();
       else if (skill === 'detonate') detonateEchoes();
       else if (skill === 'bomb') triggerBomb();
       else if (skill === 'sniper') toggleSniper();
       else if (skill === 'focus') S.focusActive = !S.focusActive;
-      else if (skill === 'map') { S.mini.global = !S.mini.global; updateMinimapLabel(); }
-      else if (skill === 'pause') { togglePause(); return; }
       updateMobileHUD();
     });
   }
+});
+
+mobilePauseEl.addEventListener('pointerdown', (e) => {
+  e.preventDefault(); e.stopPropagation();
+  togglePause();
 });
 
 // 手机上点小地图也能切换全局 / 局部
@@ -3792,6 +4605,8 @@ function updateMobileHUD() {
     S.meleeCount, S.meleeUnlocked, S.meleeCd > 0,
     S.focusActive, S.mini.global, S.energy, S.echoes.length,
     Math.ceil(S.detonateCd * 10), S.detonateCd > 0,
+    S.eggStacks, Math.ceil(S.petCd * 10), S.pets.length, S.blockItems,
+    Math.ceil(S.burrowCd * 10), S.burrowTimer > 0,
   ].join('|');
   if (key === _mobileHudKey) return;
   _mobileHudKey = key;
@@ -3803,11 +4618,19 @@ function updateMobileHUD() {
   mSkillEls.melee.classList.toggle('off', !S.meleeUnlocked || S.meleeCount < 2);
   if (mSub('melee')) mSub('melee').textContent = String(S.meleeCount);
   mSkillEls.focus.classList.toggle('on', !!S.focusActive);
-  mSkillEls.map.classList.toggle('on', !!S.mini.global);
   mSkillEls.echo.classList.toggle('off', S.energy < ECHO_COST || S.echoes.length >= MAX_ECHO);
   if (mSub('echo')) mSub('echo').textContent = `⚡${S.energy}`;
   mSkillEls.detonate.classList.toggle('off', S.echoes.length === 0 && S.detonateCd <= 0);
   if (mSub('detonate')) mSub('detonate').textContent = S.detonateCd > 0 ? `${S.detonateCd.toFixed(1)}s` : String(S.echoes.length);
+  const petCap = S.eggStacks * PET_PER_CAST;
+  mSkillEls.pet.classList.toggle('off', S.eggStacks <= 0 || (S.petCd <= 0 && S.pets.length >= petCap));
+  mSkillEls.pet.classList.toggle('on', S.eggStacks > 0 && S.petCd <= 0 && S.pets.length < petCap);
+  if (mSub('pet')) mSub('pet').textContent = S.eggStacks <= 0 ? '未解锁' : (S.petCd > 0 ? `${S.petCd.toFixed(1)}s` : `x${S.eggStacks}`);
+  mSkillEls.block.classList.toggle('off', S.blockItems <= 0);
+  if (mSub('block')) mSub('block').textContent = String(S.blockItems);
+  mSkillEls.burrow.classList.toggle('on', S.burrowTimer > 0);
+  mSkillEls.burrow.classList.toggle('off', S.burrowCd > 0 && S.burrowTimer <= 0);
+  if (mSub('burrow')) mSub('burrow').textContent = S.burrowTimer > 0 ? `${S.burrowTimer.toFixed(1)}s` : (S.burrowCd > 0 ? `${S.burrowCd.toFixed(1)}s` : '就绪');
 }
 updateMobileHUD();
 
@@ -3816,35 +4639,44 @@ updateMobileHUD();
 // ============================================================
 function showStart() {
   currentUI = 'start';
+  overlay.classList.add('scroll');
+  const visionBank = loadVisionState();
   const moveKeys = `${keyLabel(KEYBINDS.moveUp)}${keyLabel(KEYBINDS.moveLeft)}${keyLabel(KEYBINDS.moveDown)}${keyLabel(KEYBINDS.moveRight)}`;
   const keysHtml = MOBILE ? `
       <div><b>移动</b>左摇杆（模拟量，带加减速）</div>
       <div><b>瞄准 / 射击</b>右摇杆，推杆自动开火</div>
-      <div><b>技能按钮</b>残影 · 引爆 · 爆破 · 狙击 · 飞刀 · 精准 · 地图 · 暂停</div>
-      <div><b>狙击</b>点「狙击」切换，右摇杆推满单发</div>
+      <div><b>技能按钮</b>残影 · 宠物 · 方块 · 遁地 · 引爆 · 爆破 · 狙击 · 飞刀 · 精准</div>
+      <div><b>遁地</b>点「遁地」：2 秒钻入地下，期间不受攻击</div>
+      <div><b>狙击</b>点「狙击」切换，右摇杆推满单发（带红外辅助线）</div>
       <div><b>飞刀</b>按住「飞刀」蓄力，松手投掷</div>
       <div><b>精准</b>点「精准」切换：减速、提高精度</div>
-      <div><b>暂停</b>底部「暂停」按钮</div>` : `
+      <div><b>地图</b>点小地图切换全局 / 局部</div>
+      <div><b>暂停</b>左上角 ⏸</div>` : `
       <div><b>移动</b>${moveKeys} / 方向键</div>
       <div><b>瞄准</b>鼠标（自动射击）</div>
       <div><b>全局地图</b>按住 ${keyLabel(KEYBINDS.toggleMap)}（悬停小地图可放大）</div>
       <div><b>召唤残影</b>${keyLabel(KEYBINDS.spawnEcho)}</div>
+      <div><b>召唤宠物</b>${keyLabel(KEYBINDS.summonPet)}（吃蛋解锁，可叠层）</div>
+      <div><b>放置方块</b>${keyLabel(KEYBINDS.placeBlock)}（堡垒掉落）</div>
+      <div><b>遁地</b>${keyLabel(KEYBINDS.burrow)}（2 秒无敌，地下不能射击）</div>
       <div><b>引爆残影</b>底部按钮</div>
       <div><b>狙击切换</b>${keyLabel(KEYBINDS.toggleSniper)}</div>
       <div><b>狙击发射</b>右键单发（每发装填）/ ${keyLabel(KEYBINDS.sniperShoot)}</div>
       <div><b>精准</b>狙击时按住左键：减速、提高精度</div>
       <div><b>飞刀投掷</b>长按左键蓄力</div>
-      <div><b>爆破子弹</b>${keyLabel(KEYBINDS.blow)}</div>
+      <div><b>爆破子弹</b>${keyLabel(KEYBINDS.blow)}（CD 5 秒）</div>
       <div><b>暂停 / 设置</b>${keyLabel(KEYBINDS.pause)} / Esc</div>`;
   overlay.innerHTML = `
     <h1>时之残影</h1>
-    <p class="sub">射速被削弱，道具变得稀有。<br>每 3 波 Boss 会和小怪一起出现在地图里——它会发射环形弹幕与瞄准三连。<br>地图更大、怪物分布在各个区域，清完一波需要走遍地图；远处怪物会在你靠近时苏醒。<br>每一波都会按地图文件重构战场，${MOBILE ? '点按小地图可切换全局视野' : `按 <b style="color:#fff">${keyLabel(KEYBINDS.toggleMap)}</b> 可查看全局地图`}。<br>拾取 <b style="color:#e8f4ff">狙击弹夹</b> 或 <b style="color:#5fb8ff">飞刀</b> 可解锁强力战术。</p>
+    <p class="sub">射速被削弱，道具变得稀有。<br>每 3 波 Boss 会和小怪一起出现在地图里——它会发射环形弹幕与瞄准三连。<br>地图更大、怪物分布在各个区域，清完一波需要走遍地图；远处怪物会在你靠近时苏醒。<br>每一波都会按地图文件重构战场，${MOBILE ? '点按小地图可切换全局视野' : `按 <b style="color:#fff">${keyLabel(KEYBINDS.toggleMap)}</b> 可查看全局地图`}。<br>拾取 <b style="color:#e8f4ff">狙击弹夹</b> 或 <b style="color:#5fb8ff">飞刀</b> 可解锁强力战术。<br><b style="color:#ffd15c">开局 3 秒金身</b>；前 5 关为预设地图，之后进入程序化地图。<br>视野银行：<b style="color:#c084fc">${Math.floor(visionBank)} 秒</b>（跨局累计，开局最多启用 ${VISION_START_CAP} 秒）。</p>
     <div class="keys">${keysHtml}
     </div>
     <p class="sub" style="font-size:11px;color:rgba(180,200,230,.4);">
       ⚡ 射速提升 · 🔱 三向散射 · 🎯 狙击弹夹 · 🗡 飞刀 · 🟢 回血<br>
-      🟡 爆破（推开子弹） · 💚 第二次机会（免死一次） · 🟣 广域视野（拉远镜头）<br>
-      飞刀每次消耗 2 把，可以刮去子弹，耐久极低；底部圆环显示技能冷却与持续时间
+      🟡 爆破（推开子弹并震伤敌人） · 💚 第二次机会（免死一次） · 🟣 广域视野（拉远镜头）<br>
+      🥚 宠物蛋（召唤 4 只金色友军，可叠加） · 🧱 方块（按 B 放置，阻挡怪物）<br>
+      飞刀每次消耗 2 把；wave 8 后回血可溢出，血条最多显示 8 格<br>
+      遁地 ${keyLabel(KEYBINDS.burrow)}：2 秒无敌；开局金身 3 秒；wave 6 起进入程序化地图
     </p>
     <div class="btnRow">
       <button data-action="start">开 始</button>
@@ -3856,13 +4688,15 @@ function showStart() {
 
 function showGameOver() {
   currentUI = 'gameover';
+  overlay.classList.remove('scroll');
   const rank = S.score >= 600 ? '时之主宰 👑' : S.score >= 400 ? '完美协奏 ✦' : S.score >= 250 ? '残影大师' : S.score >= 120 ? '初窥门径' : '被时间吞没';
   overlay.innerHTML = `
     <p class="dead">SIGNAL LOST</p>
     <div class="big">${S.score}</div>
     <p class="rank">${rank}</p>
     <p class="sub" style="font-size:12px;color:rgba(180,200,230,.5);">
-      抵达第 ${S.wave} 波 · 最高连击 ${S.combo}
+      抵达第 ${S.wave} 波 · 最高连击 ${S.combo}<br>
+      视野银行 ${Math.floor(loadVisionState())} 秒将带入下一局
     </p>
     <div class="btnRow">
       <button data-action="start">再 来 一 次</button>
@@ -3870,6 +4704,18 @@ function showGameOver() {
     </div>
   `;
   overlay.classList.remove('hidden');
+}
+
+async function tryForceLandscape() {
+  if (!MOBILE) return;
+  try {
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      await document.documentElement.requestFullscreen();
+    }
+    if (screen.orientation && screen.orientation.lock) {
+      await screen.orientation.lock('landscape');
+    }
+  } catch (e) {}
 }
 
 overlay.addEventListener('click', (e) => {
@@ -3880,6 +4726,7 @@ overlay.addEventListener('click', (e) => {
   const act = btn.dataset.action;
 
   if (act === 'start' || act === 'restart') {
+    tryForceLandscape();
     initAudio(); overlay.classList.add('hidden'); resize(); initGame(); lastTs = 0; currentUI = 'playing';
   } else if (act === 'settings') showSettings('start');
   else if (act === 'settingsGameOver') showSettings('gameover');
@@ -3898,6 +4745,12 @@ S.mouse = { x: W / 2, y: H / 2 - 150 };
 hpBar.innerHTML = '<span class="hpSeg"></span><span class="hpSeg"></span><span class="hpSeg"></span>';
 updateMinimapLabel();
 showStart();
+window.addEventListener('pagehide', () => {
+  if (S.running && S.player) saveVisionState(S.visionBank + S.visionTimer);
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && S.running && S.player) saveVisionState(S.visionBank + S.visionTimer);
+});
 requestAnimationFrame(loop);
 
 })();
