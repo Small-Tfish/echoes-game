@@ -109,7 +109,8 @@
     background:rgba(8,10,18,.96);border-top:1px solid rgba(130,170,240,.12)}
   #overlay.start-mode{background:#070910;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0;overflow:hidden}
   #startScreen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
-  #startBg{position:absolute;inset:-50%;background-image:linear-gradient(rgba(95,184,255,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(95,184,255,.10) 1px,transparent 1px);background-size:46px 46px;opacity:.55;animation:startGrid 10s linear infinite}
+  #startBg{position:absolute;inset:-50%;background-image:linear-gradient(rgba(95,184,255,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(95,184,255,.16) 1px,transparent 1px),linear-gradient(rgba(126,249,208,.13) 1px,transparent 1px),linear-gradient(90deg,rgba(126,249,208,.13) 1px,transparent 1px);background-size:46px 46px,46px 46px,184px 184px,184px 184px;opacity:.85;animation:startGrid 10s linear infinite}
+  #startBg::after{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(126,249,208,.34) 1.1px,transparent 1.5px);background-size:46px 46px;opacity:.6;pointer-events:none}
   @keyframes startGrid{from{transform:translate(0,0)}to{transform:translate(-46px,46px)}}
   .startTitle{position:relative;z-index:1;font-size:clamp(36px,6.5vw,64px);font-weight:900;letter-spacing:7px;background:linear-gradient(135deg,#7ef9d0,#5fb8ff 55%,#c084fc);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 26px rgba(95,184,255,.35))}
   #startBtn{position:relative;z-index:1;margin-top:46px;padding:15px 66px;border-radius:30px;border:1px solid rgba(126,249,208,.55);background:rgba(12,24,34,.78);color:#bfffe9;font-family:inherit;font-size:18px;font-weight:900;letter-spacing:8px;cursor:pointer;box-shadow:0 0 26px rgba(126,249,208,.18);transition:transform .2s,box-shadow .2s,background .2s}
@@ -118,7 +119,18 @@
   #debugToggle:hover{transform:none;box-shadow:none;background:rgba(18,28,42,.9)}
   #debugToggle.on{border-color:#ffd15c;color:#ffd15c;background:rgba(60,45,10,.55);box-shadow:0 0 16px rgba(255,209,92,.16)}
   body.mobile #debugToggle{display:none}
-  .overlay .startIcon{position:absolute;top:18px;z-index:2;width:42px;height:42px;padding:0;margin:0;box-shadow:none;border-radius:50%;border:1px solid rgba(130,170,240,.32);background:rgba(10,16,26,.72);color:rgba(225,238,255,.75);font-family:inherit;font-size:17px;line-height:42px;text-align:center;text-decoration:none;cursor:pointer}
+  #changelog{position:absolute;right:18px;bottom:18px;z-index:2;width:320px;max-height:272px;padding:12px 14px;border:1px solid rgba(126,249,208,.22);border-radius:12px;background:linear-gradient(180deg,rgba(8,15,24,.84),rgba(5,10,18,.92));box-shadow:0 10px 32px rgba(0,0,0,.35);backdrop-filter:blur(8px);display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+  .clHead{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;font-weight:900;letter-spacing:2px;color:rgba(210,235,255,.86)}
+  .clHead span{font-family:Consolas,"Courier New",monospace;font-size:9px;letter-spacing:1px;color:#7ef9d0;border:1px solid rgba(126,249,208,.35);border-radius:9px;padding:2px 7px}
+  .clList{display:flex;flex-direction:column;gap:7px;overflow-y:auto;padding-right:4px;scrollbar-width:thin;scrollbar-color:rgba(126,249,208,.3) transparent}
+  .clList::-webkit-scrollbar{width:4px}
+  .clList::-webkit-scrollbar-thumb{background:rgba(126,249,208,.3);border-radius:2px}
+  .clItem{border-left:2px solid rgba(126,249,208,.32);padding-left:8px}
+  .clTop{display:flex;align-items:baseline;gap:8px;font-size:9px;color:rgba(170,195,225,.5)}
+  .clTop b{font-family:Consolas,"Courier New",monospace;font-size:9px;color:#7ef9d0}
+  .clItem p{margin:2px 0 0;font-size:10px;line-height:1.5;color:rgba(196,216,238,.62)}
+  body.mobile #changelog{width:min(300px,46vw);max-height:150px;padding:9px 10px;gap:6px;right:12px;bottom:12px}
+  body.mobile .clItem p{font-size:9px;line-height:1.4}  .overlay .startIcon{position:absolute;top:18px;z-index:2;width:42px;height:42px;padding:0;margin:0;box-shadow:none;border-radius:50%;border:1px solid rgba(130,170,240,.32);background:rgba(10,16,26,.72);color:rgba(225,238,255,.75);font-family:inherit;font-size:17px;line-height:42px;text-align:center;text-decoration:none;cursor:pointer}
   #startSettings{left:18px}
   #startHelp{right:18px;font-weight:800}  #rotateHint{position:fixed;inset:0;z-index:200;display:none;flex-direction:column;
     align-items:center;justify-content:center;gap:16px;background:#05060a;
@@ -873,7 +885,6 @@ function initGame() {
   S.mouse = { x: W / 2, y: H / 2 - 150 };
   if (debugCardMode) S.wave = PRESET_WAVES;
   nextWave();
-  S.banner.text += ' · 金身 3s';
   if (debugCardMode) S.banner.text = 'DEBUG · ' + S.banner.text;
   S.banner.life = Math.max(S.banner.life, 1.5);
   updateHUD();
@@ -2316,6 +2327,8 @@ function nextWave() {
     text: 'WAVE ' + S.wave + (map ? ' · ' + map.name : '') + (hasBoss ? ' · BOSS' : ''),
     life: hasBoss ? 2.0 : 1.5
   };
+  S.goldenTimer = GOLDEN_DURATION;
+  S.banner.text += ' · 金身 3s';
   sfx(520, 0.12, 'triangle', 0.04);
 
   if (S.wave > PRESET_WAVES && !S.cardMode) {
@@ -5035,24 +5048,44 @@ function drawPlayerStatusAuras() {
   if (S.goldenTimer > 0) {
     ctx.save();
     ctx.translate(p.x, p.y);
-    const a = 0.55 + 0.22 * Math.sin(S.gameTime * 8);
+    const a = 0.55 + 0.2 * Math.sin(S.gameTime * 8);
+    const spin = S.gameTime * 5.2;
     ctx.globalAlpha = a;
-    ctx.strokeStyle = '#ffd15c';
-    ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 18;
-    ctx.lineWidth = 3;
+
+    // 轻盈金色光晕
+    const haloR = p.r + 34;
+    const halo = ctx.createRadialGradient(0, 0, p.r * 0.7, 0, 0, haloR);
+    halo.addColorStop(0, 'rgba(255,209,92,0)');
+    halo.addColorStop(0.55, 'rgba(255,209,92,.06)');
+    halo.addColorStop(0.8, 'rgba(255,209,92,.16)');
+    halo.addColorStop(1, 'rgba(255,209,92,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(0, 0, haloR, 0, 7); ctx.fill();
+
+    // 细金色光环
+    ctx.strokeStyle = 'rgba(255,220,130,.85)';
+    ctx.lineWidth = 1.6;
     ctx.beginPath(); ctx.arc(0, 0, p.r + 12, 0, 7); ctx.stroke();
+
+    // 只保留 6 根快速旋转的放射刻线
+    ctx.save();
+    ctx.rotate(spin);
+    ctx.strokeStyle = 'rgba(255,238,170,.95)';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
     for (let i = 0; i < 6; i++) {
-      const ang = i / 6 * Math.PI * 2 + S.gameTime * 1.1;
+      const ang = i / 6 * Math.PI * 2;
       ctx.beginPath();
-      ctx.moveTo(Math.cos(ang) * (p.r + 15), Math.sin(ang) * (p.r + 15));
-      ctx.lineTo(Math.cos(ang) * (p.r + 22), Math.sin(ang) * (p.r + 22));
+      ctx.moveTo(Math.cos(ang) * (p.r + 16), Math.sin(ang) * (p.r + 16));
+      ctx.lineTo(Math.cos(ang) * (p.r + 24), Math.sin(ang) * (p.r + 24));
       ctx.stroke();
     }
-    ctx.shadowBlur = 0;
+    ctx.restore();
+
     ctx.fillStyle = '#ffe9b0';
     ctx.font = '800 9px -apple-system, "PingFang SC", sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-    ctx.fillText(`金身 ${S.goldenTimer.toFixed(1)}`, 0, -p.r - 18);
+    ctx.fillText(`金身 ${S.goldenTimer.toFixed(1)}`, 0, -p.r - 26);
     ctx.restore();
   }
 }
@@ -5583,6 +5616,31 @@ function showStart() {
       <div class="startTitle">时之残影</div>
       <button id="startBtn" data-action="start">开 始</button>
       ${MOBILE ? '' : '<button id="debugToggle" data-action="debug">调试模式：直接进入卡槽 · 关</button>'}
+      <div id="changelog" aria-label="更新日志">
+        <div class="clHead"><span>更新日志</span><span>v20</span></div>
+        <div class="clList">
+          <div class="clItem">
+            <div class="clTop"><b>v20</b><span>2026-11-22</span></div>
+            <p>每一关开局 3 秒金身；金身光效精简为 6 根快速旋转刻线与金色光晕。</p>
+          </div>
+          <div class="clItem">
+            <div class="clTop"><b>v19</b><span>2026-11-22</span></div>
+            <p>手机技能/卡槽下移到手柄中央；宽度不足自动分行并中心对称；狙击等状态显示在卡槽两侧。</p>
+          </div>
+          <div class="clItem">
+            <div class="clTop"><b>v18</b><span>2026-11-22</span></div>
+            <p>手机卡槽沿用桌面界面，点击技能图标装载；死亡结算新增「回到开始界面」。</p>
+          </div>
+          <div class="clItem">
+            <div class="clTop"><b>v17</b><span>2026-11-21</span></div>
+            <p>卡槽 44×44；图标下方英文简写；新增生命技能；按组装载（生命1、飞刀2、狙击6、视野18s）。</p>
+          </div>
+          <div class="clItem">
+            <div class="clTop"><b>v16</b><span>2026-11-21</span></div>
+            <p>卡片生效后飞回背包，不再立刻进入下一轮冷却；开始界面增加调试直启开关。</p>
+          </div>
+        </div>
+      </div>
     </div>
   `;
   overlay.classList.remove('hidden');
