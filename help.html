@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>时之残影 · 帮助</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%;background:#070910;color:#dce9ff;
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-tap-highlight-color:transparent}
+  body{position:relative;overflow-x:hidden;padding:34px 18px 60px}
+  #bg{position:fixed;inset:-60%;z-index:0;
+    background-image:linear-gradient(rgba(95,184,255,.08) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(95,184,255,.08) 1px,transparent 1px);
+    background-size:44px 44px;opacity:.6;animation:grid 12s linear infinite}
+  @keyframes grid{from{transform:translate(0,0)}to{transform:translate(-44px,44px)}}
+  main{position:relative;z-index:1;max-width:840px;margin:0 auto}
+  h1{font-size:clamp(30px,5vw,46px);letter-spacing:5px;font-weight:900;
+    background:linear-gradient(135deg,#7ef9d0,#5fb8ff 55%,#c084fc);
+    -webkit-background-clip:text;background-clip:text;color:transparent;text-align:center;
+    filter:drop-shadow(0 0 22px rgba(95,184,255,.25))}
+  .sub{text-align:center;color:rgba(180,205,235,.5);font-size:12px;letter-spacing:2px;margin:10px 0 30px}
+  section{background:rgba(12,18,30,.72);border:1px solid rgba(120,160,230,.18);
+    border-radius:14px;padding:18px 20px;margin:14px 0;box-shadow:0 0 26px rgba(0,0,0,.22)}
+  h2{font-size:15px;color:#9be7ff;letter-spacing:2px;margin-bottom:10px}
+  p,li{font-size:13px;line-height:1.9;color:rgba(205,222,245,.78)}
+  ul{padding-left:20px}
+  b{color:#eaf6ff}
+  .key{display:inline-block;min-width:24px;padding:1px 6px;margin:0 2px;border-radius:5px;
+    border:1px solid rgba(126,249,208,.32);background:rgba(126,249,208,.08);
+    color:#bfffe9;font-weight:800;text-align:center;font-size:12px}
+  .gold{color:#ffd15c}
+  .purple{color:#c084fc}
+  .back{display:block;width:max-content;margin:30px auto 0;padding:12px 36px;border-radius:24px;
+    border:1px solid rgba(126,249,208,.5);background:rgba(12,28,34,.8);color:#bfffe9;
+    text-decoration:none;font-weight:800;letter-spacing:3px;font-size:14px}
+  .back:hover{box-shadow:0 0 24px rgba(126,249,208,.22)}
+  @media(max-width:560px){body{padding:22px 12px 40px}section{padding:14px 14px}}
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<main>
+  <h1>时之残影</h1>
+  <div class="sub">操作与机制说明 · V15</div>
+
+  <section>
+    <h2>基础操作</h2>
+    <ul>
+      <li><b>移动</b>：<span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> 或方向键；手机左摇杆。</li>
+      <li><b>瞄准 / 射击</b>：鼠标自动开火；手机右摇杆推杆开火。</li>
+      <li><b>暂停</b>：<span class="key">P</span> / <span class="key">Esc</span>；手机左上角 ⏸。</li>
+      <li><b>地图</b>：<span class="key">M</span> 按住查看全局；手机点小地图切换。</li>
+      <li><b>放置方块</b>：<span class="key">B</span>；堡垒掉落方块后使用。</li>
+      <li><b>横屏</b>：手机无论竖屏还是横屏，都会自动以横屏逻辑运行；竖屏时画面旋转 90°。</li>
+      <li><b>调试模式</b>：桌面开始界面左下角开关，开启后从第 6 关卡槽模式直接开始；也可用 <span class="key">?debug=1</span>。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>前 5 关：原版模式</h2>
+    <p>前 5 关沿用原来的技能快捷键与弹出式技能状态条：</p>
+    <ul>
+      <li>残影 <span class="key">空格</span>；狙击 <span class="key">R</span> / <span class="key">Q</span>；爆破 <span class="key">G</span>；宠物 <span class="key">E</span>；遁地 <span class="key">C</span>。</li>
+      <li>飞刀长按左键蓄力；精准在狙击时按住左键。</li>
+      <li>第 6 关开始切换为「卡槽模式」。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>第 6 关起：残响卡槽</h2>
+    <ul>
+      <li><b>技能悬浮栏</b>固定在原来位置；按 <span class="key">H</span> 隐藏 / 唤出（初始显示）。</li>
+      <li>技能图标中央有数量泡泡，显示剩余次数、秒数或强度，必要时带单位。</li>
+      <li><b>快捷数字</b>按技能图标顺序排列：<span class="key">1</span>…<span class="key">0</span><span class="key">-</span><span class="key">=</span>。按下后把对应技能<b>装载到槽位</b>，从最左空槽开始。</li>
+      <li>技能背包行是 11 个技能方块，卡槽方块在技能图标<b>下方</b>居中排列；技能装载后进入冷却，<b>冷却结束立即自动生效</b>，不需要再按数字。生效后卡片会自动收回背包，<b>不会进入下一次冷却</b>；每次装载只生效一次。</li>      <li><b>英文简写</b>：卡槽图标下方显示 ECHO / DET / BOMB / SNIPE / BLADE / PET / BURROW / FOCUS / VISION / SECOND / LIFE。</li>
+      <li><b>每组数量</b>：生命 1、飞刀 2、狙击 6、视野 18s；残影/引爆/爆破/宠物/遁地/精准/免死各 1。生命卡生效时 +1 HP。</li>
+      <li>默认 <b>5 个槽位</b>。轻按 <span class="key">D</span> 后立刻按槽位数字 <span class="key">1</span>…<span class="key">5</span> 删除该槽卡片（长按 D 是右移，数字仍用于技能）。</li>
+      <li>删除时：卡片尚未加载完成 → 退回背包；已经加载完成 → 直接删除。</li>
+      <li>技能使用提示只显示在<b>左下角</b>，不再占用屏幕中央。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>卡片动画</h2>
+    <ul>
+      <li><b>装载 / 切换</b>：像胶卷一样向下滑动，持续 1 秒；空槽时新卡片从上方滑入。</li>
+      <li><b>收回</b>：生效后卡片飞回对应技能图标；开关型（狙击/精准）每次装载切换开/关，持续型（视野）激活后收回，被动型（免死）保持。</li>
+      <li><b>加载角</b>：以卡片中心为顶点，两条射线把卡片分成亮 / 暗两部分；亮色比例表示加载进度。角度在加载过程中旋转 2.5 圈，亮色只前进不后退，最后整张卡片变亮。</li>
+      <li><b>耐久线</b>：加载完成后出现一条水平切线；线下亮色表示剩余耐久，线上暗色表示已消耗。弹夹、飞刀、视野时间等都会实时变化。</li>
+      <li><b>数量泡泡</b>：卡片下方中央显示这一组的数量 / 秒数；每张卡装载时从背包取一组。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>技能与成长</h2>
+    <ul>
+      <li><b>宠物蛋</b>：每次拾取只提供有限次数，不再是无限召唤；每层蛋可以召唤 4 只金色友军，CD 5 秒。</li>
+      <li><b>开局金身</b>：每局开始 3 秒无敌。</li>
+      <li><b>遁地</b>：2 秒钻入地下，免疫攻击，不能开火；CD 8 秒。</li>
+      <li><b>视野</b>：单次 18 秒，跨局累计到视野银行；每局开局最多启用 60 秒。</li>
+      <li><b>回血</b>：wave 8 后允许溢出，血条最多显示 8 格。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>地图与怪物</h2>
+    <ul>
+      <li>前 5 关为预设地图；第 6 关起程序化生成。</li>
+      <li>每关地图宽高 +320；怪物数量第 6 关约 84 只（含 Boss 共 85），之后每关 +20，上限 400。</li>
+      <li>每 5 关墙体面积按 5% / 10% / 20% / 25% / 25% 循环；最小墙体 10 / 20 / 40 / 80 / 160；墙体连通块 3 / 4 / 8 / 16 / 16。</li>
+      <li>墙体之间至少留 120px 通道，Boss 也能通过；可走区域保证为同一个连通块。</li>
+      <li>怪物每波血量 +10%。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>手机提示</h2>
+    <ul>
+      <li>竖屏时整个游戏旋转 90° 以横屏逻辑运行；如果浏览器支持，开始时会尝试锁定横屏。</li>
+      <li>技能按钮在底部 3×3 排列；狙击模式有红色红外辅助线。</li>
+      <li>手机第 6 关起自动进入卡槽模式，界面与桌面一致：11 个技能图标在上、5 个卡槽在下，整体下移到左右手柄中央。横向空间不足时自动分行，并保持中心对称。<b>点击技能图标</b>装载一组，不再显示 3×3 技能按钮。</li>
+      <li>狙击 / 精准 / 视野 / 遁地 / 宠物 / 免死等状态会显示在卡槽的左右两侧。</li>
+      <li>死亡结算界面新增「回到开始界面」按钮；也可以直接「再来一次」。</li>
+    </ul>
+  </section>
+
+  <a class="back" href="Game.html">返 回 游 戏</a>
+</main>
+</body>
+</html>

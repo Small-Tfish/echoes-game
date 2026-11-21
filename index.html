@@ -10,6 +10,8 @@
     font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
     color:#e8ecf5;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:none}
   #game{display:block;position:fixed;inset:0;cursor:crosshair}
+  #stage{position:fixed;top:0;left:0;transform-origin:top left;overflow:hidden;background:#0a0b10}
+  #rotateHint{display:none!important}
 
   .hud{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;justify-content:space-between;
     padding:16px 22px;pointer-events:none;font-variant-numeric:tabular-nums}
@@ -105,7 +107,20 @@
   .overlay.scroll{justify-content:flex-start;padding-top:34px;padding-bottom:34px}
   .overlay.scroll .btnRow{position:sticky;bottom:0;z-index:2;padding:10px 0 6px;
     background:rgba(8,10,18,.96);border-top:1px solid rgba(130,170,240,.12)}
-  #rotateHint{position:fixed;inset:0;z-index:200;display:none;flex-direction:column;
+  #overlay.start-mode{background:#070910;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0;overflow:hidden}
+  #startScreen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+  #startBg{position:absolute;inset:-50%;background-image:linear-gradient(rgba(95,184,255,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(95,184,255,.10) 1px,transparent 1px);background-size:46px 46px;opacity:.55;animation:startGrid 10s linear infinite}
+  @keyframes startGrid{from{transform:translate(0,0)}to{transform:translate(-46px,46px)}}
+  .startTitle{position:relative;z-index:1;font-size:clamp(36px,6.5vw,64px);font-weight:900;letter-spacing:7px;background:linear-gradient(135deg,#7ef9d0,#5fb8ff 55%,#c084fc);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 26px rgba(95,184,255,.35))}
+  #startBtn{position:relative;z-index:1;margin-top:46px;padding:15px 66px;border-radius:30px;border:1px solid rgba(126,249,208,.55);background:rgba(12,24,34,.78);color:#bfffe9;font-family:inherit;font-size:18px;font-weight:900;letter-spacing:8px;cursor:pointer;box-shadow:0 0 26px rgba(126,249,208,.18);transition:transform .2s,box-shadow .2s,background .2s}
+  #startBtn:hover{transform:translateY(-2px);box-shadow:0 0 40px rgba(126,249,208,.3);background:rgba(20,44,52,.9)}
+  #debugToggle{position:absolute;left:18px;bottom:18px;z-index:2;margin:0;padding:8px 14px;border-radius:16px;border:1px solid rgba(130,170,240,.28);background:rgba(10,16,26,.72);color:rgba(200,220,245,.55);font-family:inherit;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:none}
+  #debugToggle:hover{transform:none;box-shadow:none;background:rgba(18,28,42,.9)}
+  #debugToggle.on{border-color:#ffd15c;color:#ffd15c;background:rgba(60,45,10,.55);box-shadow:0 0 16px rgba(255,209,92,.16)}
+  body.mobile #debugToggle{display:none}
+  .overlay .startIcon{position:absolute;top:18px;z-index:2;width:42px;height:42px;padding:0;margin:0;box-shadow:none;border-radius:50%;border:1px solid rgba(130,170,240,.32);background:rgba(10,16,26,.72);color:rgba(225,238,255,.75);font-family:inherit;font-size:17px;line-height:42px;text-align:center;text-decoration:none;cursor:pointer}
+  #startSettings{left:18px}
+  #startHelp{right:18px;font-weight:800}  #rotateHint{position:fixed;inset:0;z-index:200;display:none;flex-direction:column;
     align-items:center;justify-content:center;gap:16px;background:#05060a;
     color:#dce9ff;text-align:center;padding:24px;font-family:-apple-system,"PingFang SC",sans-serif}
   body.mobile #rotateHint{display:flex}
@@ -218,6 +233,9 @@
   .mSkill.on .sub{color:#7ef9d0}
   .mSkill.charging{border-color:#ffd166;color:#ffd166;box-shadow:0 0 16px rgba(255,209,102,.5)}
   body.mobile #sniperHud, body.mobile #meleeHud, body.mobile #bombHud, body.mobile #blockHud{display:none}
+  #skillToast{position:fixed;left:24px;bottom:232px;z-index:22;max-width:340px;padding:8px 12px;border-radius:8px;border:1px solid rgba(126,249,208,.35);background:rgba(8,16,22,.88);color:#d8fff4;font-size:11px;font-weight:700;letter-spacing:1px;opacity:0;transform:translateY(8px) scale(.92);transform-origin:left bottom;transition:opacity .16s,transform .22s cubic-bezier(.2,1.6,.4,1);pointer-events:none;backdrop-filter:blur(4px)}
+  #skillToast.show{opacity:1;transform:translateY(0) scale(1)}
+  body.mobile #skillToast{left:14px;bottom:150px;font-size:10px;max-width:250px}
   #mobilePause{display:none}
   body.mobile #mobilePause{display:block;position:fixed;left:14px;top:48px;z-index:15;
     width:38px;height:38px;border-radius:50%;border:1px solid rgba(130,170,240,.35);
@@ -237,6 +255,7 @@
 </style>
 </head>
 <body>
+<div id="stage">
 <canvas id="game"></canvas>
 
 <div class="hud">
@@ -320,6 +339,8 @@
   <div class="phone"></div>
   <h2>请横屏游玩</h2>
   <p>旋转设备后会自动继续</p>
+</div>
+<div id="skillToast"></div>
 </div>
 
 <!-- ============================================================
@@ -489,11 +510,23 @@ const MELEE_MAX_DURABILITY = 10;
 // —— 宠物蛋 ——
 const PET_CD = 5;                 // 技能冷却
 const PET_PER_CAST = 4;           // 每颗蛋召唤 4 个
-const PET_MAX_STACKS = 4;         // 最多叠加 4 层
+const PET_MAX_STACKS = 9;         // 最多囤 9 颗蛋（每颗只能用一次）
 const PET_LIFE = 18;              // 友方生物存活时间
 const PET_ATTACK_CD = 0.7;
 const PET_DAMAGE = 1;
 const PET_SPEED = 140;
+const PET_MAX_ALIVE = 16;         // 场上友军上限
+
+// —— 残响卡槽（第 6 关起，桌面端） ——
+const CARD_SLOT_COUNT = 5;
+const CARD_SLIDE_TIME = 1.0;
+const CARD_LOAD_TIME = 1.2;
+const CARD_RETURN_TIME = 0.45;
+const CARD_SKILLS = ['echo','detonate','bomb','sniper','melee','pet','burrow','focus','vision','second','life'];
+const CARD_NAMES = { echo:'残影', detonate:'引爆', bomb:'爆破', sniper:'狙击', melee:'飞刀', pet:'宠物', burrow:'遁地', focus:'精准', vision:'视野', second:'免死', life:'生命' };
+const CARD_ABBR = { echo:'ECHO', detonate:'DET', bomb:'BOMB', sniper:'SNIPE', melee:'BLADE', pet:'PET', burrow:'BURROW', focus:'FOCUS', vision:'VISION', second:'SECOND', life:'LIFE' };
+const CARD_GROUPS = { echo:1, detonate:1, bomb:1, sniper:6, melee:2, pet:1, burrow:1, focus:1, vision:18, second:1, life:1 };
+const CARD_AUTO = { echo:'repeat', detonate:'repeat', bomb:'repeat', sniper:'toggle', melee:'repeat', pet:'repeat', burrow:'repeat', focus:'toggle', vision:'duration', second:'passive', life:'repeat' };
 const PET_TYPES = [
   { type: 'tracker',  shape: 'tri',     speed: 150, damage: 0.7, atkCd: 0.8 },
   { type: 'hunter',   shape: 'diamond', speed: 170, damage: 0.6, atkCd: 0.7 },
@@ -602,6 +635,7 @@ function keyLabel(k) {
 //  基础
 // ============================================================
 const canvas = document.getElementById('game');
+const stageEl = document.getElementById('stage');
 const ctx = canvas.getContext('2d');
 const overlay = document.getElementById('overlay');
 const scoreEl = document.getElementById('score');
@@ -618,6 +652,7 @@ const meleeHud = document.getElementById('meleeHud');
 const meleeState = document.getElementById('meleeState');
 const bombHud = document.getElementById('bombHud');
 const bombState = document.getElementById('bombState');
+const skillToastEl = document.getElementById('skillToast');
 const blockHud = document.getElementById('blockHud');
 const blockState = document.getElementById('blockState');
 const secondChanceMark = document.getElementById('secondChanceMark');
@@ -658,9 +693,21 @@ function minimapHit(x, y) {
          y >= top - 6 && y <= top + mh + (MOBILE ? 16 : 22);
 }
 
+function isPortraitMobile() {
+  return MOBILE && window.innerHeight > window.innerWidth;
+}
+function toStagePoint(cx, cy) {
+  if (isPortraitMobile()) return { x: cy, y: window.innerWidth - cx };
+  return { x: cx, y: cy };
+}
 function resize() {
   dpr = Math.min(window.devicePixelRatio || 1, 2);
-  W = window.innerWidth; H = window.innerHeight;
+  const portrait = isPortraitMobile();
+  W = portrait ? window.innerHeight : window.innerWidth;
+  H = portrait ? window.innerWidth : window.innerHeight;
+  stageEl.style.width = W + 'px';
+  stageEl.style.height = H + 'px';
+  stageEl.style.transform = portrait ? 'rotate(90deg) translateY(-100%)' : 'none';
   canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -718,6 +765,7 @@ const S = {
   secondChance: false,
   eggStacks: 0, petCd: 0, pets: [],
   blockItems: 0, blocks: [],
+  cardMode: false, skillHudHidden: false, deleteArmed: 0, cards: [], skillBadgePop: {}, skillBadgePrev: {},
 
   map: null, cam: { x: 0, y: 0, zoom: 1 }, mini: { global: false, hot: false }, visionTimer: 0, visionBank: 0,
   burrowTimer: 0, burrowCd: 0, goldenTimer: 0,
@@ -791,6 +839,11 @@ function initGame() {
   S.secondChance = false;
   S.eggStacks = 0; S.petCd = 0; S.pets = [];
   S.blockItems = 0; S.blocks = [];
+  S.cardMode = false; S.skillHudHidden = false; S.deleteArmed = 0; S.cards = []; S.skillBadgePop = {}; S.skillBadgePrev = {};
+  if (MOBILE) {
+    const ms = document.getElementById('mobileSkills');
+    if (ms) ms.style.display = '';
+  }
   const bankTotal = loadVisionState();
   const startVision = Math.min(VISION_START_CAP, bankTotal);
   S.visionBank = Math.max(0, bankTotal - startVision);
@@ -818,8 +871,10 @@ function initGame() {
   for (const k in keys) keys[k] = false;
 
   S.mouse = { x: W / 2, y: H / 2 - 150 };
+  if (debugCardMode) S.wave = PRESET_WAVES;
   nextWave();
   S.banner.text += ' · 金身 3s';
+  if (debugCardMode) S.banner.text = 'DEBUG · ' + S.banner.text;
   S.banner.life = Math.max(S.banner.life, 1.5);
   updateHUD();
   updateBuffsUI(true);
@@ -918,6 +973,796 @@ function updateBlockHUD() {
   if (!has) return;
   blockHud.classList.add('active');
   blockState.textContent = `x${S.blockItems} | 按 ${keyLabel(KEYBINDS.placeBlock)} 放置`;
+}
+
+let skillToastTimer = 0;
+function showSkillToast(text) {
+  if (!skillToastEl) return;
+  skillToastEl.textContent = text;
+  skillToastEl.classList.add('show');
+  clearTimeout(skillToastTimer);
+  skillToastTimer = setTimeout(() => skillToastEl.classList.remove('show'), 1600);
+}
+
+// 调试：卡槽模式直启
+const DEBUG_CARD_KEY = 'echoes_debug_card_v1';
+let debugCardMode = false;
+function loadDebugMode() {
+  try { return localStorage.getItem(DEBUG_CARD_KEY) === '1'; } catch (e) { return false; }
+}
+function saveDebugMode(v) {
+  try { localStorage.setItem(DEBUG_CARD_KEY, v ? '1' : '0'); } catch (e) {}
+}
+function updateDebugUI() {
+  const b = document.getElementById('debugToggle');
+  if (!b) return;
+  b.classList.toggle('on', debugCardMode);
+  b.textContent = `调试模式：直接进入卡槽 · ${debugCardMode ? '开' : '关'}`;
+}
+function toggleDebugMode() {
+  debugCardMode = !debugCardMode;
+  saveDebugMode(debugCardMode);
+  updateDebugUI();
+}
+// ============================================================
+//  残响卡槽（第 6 关起，桌面端）
+// ============================================================
+function makeCardSlots() {
+  const out = [];
+  for (let i = 0; i < CARD_SLOT_COUNT; i++) {
+    out.push({ id: null, targetId: null, phase: 'empty', t: 0, dur: 0, oldStartY: 0, flash: 0, bubblePop: 0, prevBubble: '', retry: 0, group: 0, maxGroup: 0 });
+  }
+  return out;
+}
+
+function hasCardSkill(id) {
+  return S.cards.some(c => c.id === id || c.targetId === id);
+}
+
+function cardCooldown(id) {
+  switch (id) {
+    case 'echo': return 0.8;
+    case 'detonate': return DETONATE_CD;
+    case 'bomb': return BOMB_CD_BASE;
+    case 'sniper': return 1.0;
+    case 'melee': return MELEE_CD;
+    case 'pet': return PET_CD;
+    case 'burrow': return BURROW_CD;
+    case 'focus': return 1.0;
+    case 'vision': return 1.0;
+    case 'second': return 1.0;
+    default: return 1.0;
+  }
+}
+
+function cardSkillLoadable(id) {
+  if (!S.running || S.over || S.paused) return false;
+  switch (id) {
+    case 'echo': return S.energy >= ECHO_COST && S.echoes.length < MAX_ECHO;
+    case 'detonate': return S.echoes.length > 0;
+    case 'bomb': return !!S.bombUnlocked;
+    case 'sniper': return S.sniperMag > 0;
+    case 'melee': return S.meleeUnlocked && S.meleeCount >= 2;
+    case 'pet': return S.eggStacks > 0;
+    case 'burrow': return true;
+    case 'focus': return true;
+    case 'vision': return S.visionBank > 0 || S.visionTimer > 0;
+    case 'second': return !!S.secondChance;
+    case 'life': return true;
+    default: return false;
+  }
+}
+
+function cardSkillUsable(id) {
+  switch (id) {
+    case 'echo': return S.energy >= ECHO_COST && S.echoCd <= 0 && S.echoes.length < MAX_ECHO;
+    case 'detonate': return S.echoes.length > 0 && S.detonateCd <= 0;
+    case 'bomb': return !!S.bombUnlocked && S.bombCd <= 0;
+    case 'sniper': return S.sniperMag > 0;
+    case 'melee': return S.meleeUnlocked && S.meleeCount >= 2 && S.meleeCd <= 0;
+    case 'pet': return S.eggStacks > 0 && S.petCd <= 0 && S.pets.length < PET_MAX_ALIVE;
+    case 'burrow': return S.burrowCd <= 0 && S.burrowTimer <= 0;
+    case 'focus': return true;
+    case 'vision': return S.visionBank > 0;
+    case 'second': return false;
+    case 'life': return true;
+    default: return false;
+  }
+}
+
+function cardGroupText(id, g) {
+  g = Math.max(0, Math.round(g || 0));
+  switch (id) {
+    case 'sniper': return `${g}发`;
+    case 'melee': return `${g}把`;
+    case 'pet': return `${g}蛋`;
+    case 'vision': return `${g}s`;
+    case 'life': return `+${g}`;
+    case 'echo': return `${g}次`;
+    case 'detonate': return `${g}`;
+    case 'bomb': return `${g}`;
+    case 'burrow': return `${g}`;
+    case 'focus': return `${g}`;
+    case 'second': return `${g}`;
+    default: return String(g);
+  }
+}
+
+function cardDurability(id, slot) {
+  const g = (slot && slot.group) || CARD_GROUPS[id] || 1;
+  const max = (slot && slot.maxGroup) || g;
+  return { p: Math.max(0, Math.min(1, g / Math.max(1, max))), text: cardGroupText(id, g) };
+}
+
+function skillBadgeText(id) {
+  switch (id) {
+    case 'echo': return `${Math.floor(S.energy / ECHO_COST)}次`;
+    case 'detonate': return String(S.echoes.length);
+    case 'bomb': return `x${S.bombStacks}`;
+    case 'sniper': return `${S.sniperMag}发`;
+    case 'melee': return `${S.meleeCount}把`;
+    case 'pet': return `${S.eggStacks}蛋`;
+    case 'burrow': return S.burrowCd > 0 ? `${Math.ceil(S.burrowCd)}s` : '';
+    case 'focus': return '';
+    case 'vision': {
+      const t = S.visionTimer > 0 ? S.visionTimer : S.visionBank;
+      return t > 0 ? `${Math.ceil(t)}s` : '';
+    }
+    case 'second': return S.secondChance ? '1' : '';
+    case 'life': return '+1';
+    default: return '';
+  }
+}
+
+function cardBubbleText(id, slot) {
+  const g = (slot && slot.group) || CARD_GROUPS[id] || 1;
+  return cardGroupText(id, g);
+}
+
+function startCardSwitch(slot, newId) {
+  let oldStart = 0;
+  if (slot.phase === 'switch') {
+    const p = Math.min(1, slot.t / CARD_SLIDE_TIME);
+    const e = p * p * (3 - 2 * p);
+    oldStart = -CARD_H + CARD_H * e;
+    slot.id = slot.targetId;
+  } else if (slot.phase === 'delete') {
+    const p = Math.min(1, slot.t / CARD_SLIDE_TIME);
+    const e = p * p * (3 - 2 * p);
+    oldStart = slot.oldStartY + (CARD_H - slot.oldStartY) * e;
+  } else if (slot.phase === 'empty' || slot.phase === 'return') {
+    oldStart = CARD_H;
+    slot.id = null;
+  } else {
+    oldStart = 0;
+  }
+  slot.targetId = newId;
+  slot.phase = 'switch';
+  slot.t = 0;
+  slot.oldStartY = oldStart;
+  slot.flash = 0;
+  slot.retry = 0;
+}
+
+function startCardDelete(slot) {
+  const loaded = slot.phase === 'ready' || slot.phase === 'cooldown';
+  let oldStart = 0;
+  if (slot.phase === 'switch') {
+    const p = Math.min(1, slot.t / CARD_SLIDE_TIME);
+    const e = p * p * (3 - 2 * p);
+    oldStart = -CARD_H + CARD_H * e;
+    slot.id = slot.targetId;
+  } else if (slot.phase === 'delete') {
+    return;
+  } else if (slot.phase === 'empty' || slot.phase === 'return') {
+    return;
+  }
+  const id = slot.id;
+  slot.targetId = null;
+  slot.phase = 'delete';
+  slot.t = 0;
+  slot.oldStartY = oldStart;
+  if (id === 'sniper') { S.sniperMode = false; S.focusActive = false; }
+  if (id === 'focus') S.focusActive = false;
+  showSkillToast(loaded ? `删除 ${CARD_NAMES[id] || ''}` : `退回背包 ${CARD_NAMES[id] || ''}`);
+}
+
+let dDownAt = 0;
+function cardKeyIndex(k) {
+  if (k >= '1' && k <= '9') return Number(k) - 1;
+  if (k === '0') return 9;
+  if (k === '-') return 10;
+  if (k === '=') return 11;
+  return -1;
+}
+function deleteCardSlot(i) {
+  const slot = S.cards[i];
+  if (!slot || slot.phase === 'empty') { showSkillToast('槽位为空'); return; }
+  startCardDelete(slot);
+}
+
+function quickUseSkill(id) {
+  if (!S.cardMode || !CARD_NAMES[id]) return;
+  let slot = S.cards.find(c => c.id === id || c.targetId === id);
+  if (!slot) {
+    slot = S.cards.find(c => c.phase === 'empty');
+    if (!slot) slot = S.cards[0];
+    if (!cardSkillLoadable(id)) {
+      showSkillToast(`无法装载：${CARD_NAMES[id]}`);
+      return;
+    }
+    const replacing = slot.phase !== 'empty';
+    const grp = CARD_GROUPS[id] || 1;
+    startCardSwitch(slot, id);
+    showSkillToast(`${replacing ? '替换' : '装载'} ${CARD_NAMES[id]}（一组 ${cardGroupText(id, grp)}）→ 槽位${S.cards.indexOf(slot) + 1}`);
+    return;
+  }
+  if (slot.phase === 'switch' || slot.phase === 'load') showSkillToast(`装载中：${CARD_NAMES[id]}`);
+  else if (slot.phase === 'return') showSkillToast(`正在收回背包：${CARD_NAMES[id]}`);
+  else if (slot.phase === 'cooldown') showSkillToast(`自动冷却中：${CARD_NAMES[id]}`);
+  else if (slot.phase === 'ready') showSkillToast(`已装载：${CARD_NAMES[id]}（自动生效后收回）`);
+  else showSkillToast(`${CARD_NAMES[id]} 正在删除`);
+}
+
+function cardDepleted(id) {
+  switch (id) {
+    case 'sniper': return S.sniperMag <= 0;
+    case 'melee': return !S.meleeUnlocked || S.meleeCount < 2;
+    case 'pet': return S.eggStacks <= 0;
+    case 'vision': return S.visionTimer <= 0 && S.visionBank <= 0;
+    default: return false;
+  }
+}
+
+function cardSkillRemaining(id) {
+  switch (id) {
+    case 'echo': return Math.max(0, S.echoCd);
+    case 'detonate': return Math.max(0, S.detonateCd);
+    case 'bomb': return Math.max(0, S.bombCd);
+    case 'melee': return Math.max(0, S.meleeCd);
+    case 'pet': return Math.max(0, S.petCd);
+    case 'burrow': return Math.max(0, S.burrowCd);
+    default: return 0;
+  }
+}
+
+function returnCardToBag(slot, text) {
+  if (!slot.id) return;
+  slot.flash = 0.55;
+  slot.bubblePop = 1;
+  if (S.skillBadgePop) S.skillBadgePop[slot.id] = 1;
+  slot.phase = 'return';
+  slot.t = 0;
+  const idx = CARD_SKILLS.indexOf(slot.id);
+  if (idx >= 0) {
+    const L = getCardLayout();
+    const p = L.icons.find(q => q.i === idx);
+    if (p) {
+      slot.returnX = p.x;
+      slot.returnY = p.y - CARD_H / 2;
+    }
+  }
+  S.banner = { text: '', life: 0 };
+  showSkillToast(text || `已收回背包：${CARD_NAMES[slot.id] || ''}`);
+}
+
+function autoCastSlot(slot) {
+  if (!S.running || S.over || S.paused || !slot.id) return;
+  const id = slot.id;
+  const kind = CARD_AUTO[id] || 'repeat';
+
+  if (kind === 'passive') {
+    returnCardToBag(slot, `被动保持 · 已收回背包：${CARD_NAMES[id]}`);
+    return;
+  }
+
+  if (kind === 'toggle') {
+    if (id === 'sniper') {
+      if (S.sniperMag <= 0) { returnCardToBag(slot, '狙击弹夹已空 · 已收回背包'); return; }
+      toggleSniper();
+      returnCardToBag(slot, `自动${S.sniperMode ? '开启' : '关闭'}：狙击 · 已收回背包`);
+      return;
+    }
+    if (id === 'focus') {
+      S.focusActive = !S.focusActive;
+      returnCardToBag(slot, `自动${S.focusActive ? '开启' : '关闭'}：精准 · 已收回背包`);
+      return;
+    }
+    returnCardToBag(slot);
+    return;
+  }
+
+  if (kind === 'duration') {
+    let text = '视野生效中 · 已收回背包';
+    if (S.visionTimer <= 0 && S.visionBank > 0 && applyCardSkill('vision')) {
+      text = '自动生效：视野 · 已收回背包';
+    }
+    returnCardToBag(slot, text);
+    return;
+  }
+
+  if (cardDepleted(id)) { returnCardToBag(slot, `耐久耗尽 · 已收回背包：${CARD_NAMES[id]}`); return; }
+  if (!cardSkillUsable(id)) {
+    slot.phase = 'ready';
+    slot.retry = 0.45;
+    return;
+  }
+  if (applyCardSkill(id)) {
+    returnCardToBag(slot, `自动生效：${CARD_NAMES[id]} · 已收回背包`);
+  } else {
+    slot.phase = 'ready';
+    slot.retry = 0.45;
+  }
+}
+
+function applyCardSkill(id) {
+  switch (id) {
+    case 'echo': spawnEcho(); return true;
+    case 'detonate': detonateEchoes(); return true;
+    case 'bomb': triggerBomb(); return true;
+    case 'sniper': if (!S.sniperMode) toggleSniper(); return true;
+    case 'melee':
+      S.meleeCharge = MELEE_MAX_CHARGE;
+      throwMelee();
+      return true;
+    case 'pet': summonPets(); return true;
+    case 'burrow': activateBurrow(); return true;
+    case 'focus': S.focusActive = true; return true;
+    case 'vision': {
+      const take = Math.min(VISION_DURATION, S.visionBank);
+      if (take <= 0) return false;
+      S.visionBank -= take;
+      S.visionTimer = Math.min(VISION_MAX_ACTIVE, S.visionTimer + take);
+      saveVisionState(S.visionBank + S.visionTimer);
+      return true;
+    }
+    case 'second': return false;
+    case 'life': S.player.hp += 1; updateHUD(); return true;
+    default: return false;
+  }
+}
+
+function updateSkillBadgePops(dt) {
+  for (const id of CARD_SKILLS) {
+    const text = skillBadgeText(id);
+    if (S.skillBadgePrev[id] !== undefined && S.skillBadgePrev[id] !== text && text) {
+      S.skillBadgePop[id] = 1;
+    }
+    S.skillBadgePrev[id] = text;
+    S.skillBadgePop[id] = (S.skillBadgePop[id] || 0) * Math.pow(0.02, dt);
+  }
+}
+
+function updateCards(dt) {
+  if (!S.cardMode) return;
+  if (S.deleteArmed > 0) S.deleteArmed = Math.max(0, S.deleteArmed - dt);
+  updateSkillBadgePops(dt);
+
+  for (const slot of S.cards) {
+    if (slot.flash > 0) slot.flash = Math.max(0, slot.flash - dt);
+    if (slot.bubblePop > 0) slot.bubblePop = Math.max(0, slot.bubblePop - dt * 3.5);
+
+    const bt = slot.id ? cardBubbleText(slot.id, slot) : '';
+    if (slot.id && slot.prevBubble !== undefined && slot.prevBubble !== bt) slot.bubblePop = 1;
+    slot.prevBubble = bt;
+
+    if (slot.phase === 'return') {
+      slot.t += dt;
+      if (slot.t >= CARD_RETURN_TIME) {
+        slot.id = null;
+        slot.phase = 'empty';
+        slot.t = 0;
+        slot.prevBubble = '';
+      }
+      continue;
+    }
+
+    if (slot.phase === 'switch' || slot.phase === 'delete') {
+      slot.t += dt;
+      if (slot.t >= CARD_SLIDE_TIME) {
+        if (slot.targetId) {
+          slot.id = slot.targetId;
+          slot.targetId = null;
+          slot.phase = 'load';
+          slot.t = 0;
+          slot.group = CARD_GROUPS[slot.id] || 1;
+          slot.maxGroup = slot.group;
+          slot.dur = Math.max(CARD_LOAD_TIME, cardSkillRemaining(slot.id));
+        } else {
+          slot.id = null;
+          slot.phase = 'empty';
+          slot.t = 0;
+          slot.prevBubble = '';
+        }
+      }
+    } else if (slot.phase === 'load' || slot.phase === 'cooldown') {
+      slot.t += dt;
+      if (slot.t >= slot.dur) {
+        slot.t = slot.dur;
+        slot.phase = 'ready';
+        autoCastSlot(slot);
+      }
+    } else if (slot.phase === 'ready') {
+      slot.retry -= dt;
+      if (slot.retry <= 0) autoCastSlot(slot);
+    }
+  }
+}
+
+function drawSkillBubble(x, y, text, color, alpha, center, scale, small) {
+  if (!text) return;
+  ctx.save();
+  if (alpha !== undefined) ctx.globalAlpha *= alpha;
+  ctx.translate(x, y);
+  if (scale !== undefined && scale !== 1) ctx.scale(scale, scale);
+  ctx.font = `800 ${small ? 6 : 7}px -apple-system, "PingFang SC", sans-serif`;
+  const w = Math.max(small ? 9 : 15, ctx.measureText(text).width + (small ? 5 : 8)), h = small ? 8 : 11;
+  const bx = center ? -w / 2 : -w, by = 0;
+  ctx.fillStyle = 'rgba(7,12,20,.9)';
+  ctx.strokeStyle = color || 'rgba(126,249,208,.55)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(bx, by, w, h, small ? 4 : 5); else ctx.rect(bx, by, w, h);
+  ctx.fill(); ctx.stroke();
+  // tail
+  const tx = center ? bx + w / 2 - (small ? 2 : 4) : bx + 4;
+  ctx.beginPath(); ctx.moveTo(tx, by + h); ctx.lineTo(tx + (small ? 2 : 4), by + h + (small ? 2 : 3)); ctx.lineTo(tx + (small ? 4 : 8), by + h); ctx.fillStyle = 'rgba(7,12,20,.9)'; ctx.fill();
+  ctx.fillStyle = '#d8fff4';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, bx + w / 2, by + h / 2 + 0.5);
+  ctx.restore();
+}
+
+function drawCardSkillIcon(id, cx, cy, s, color) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.8;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  switch (id) {
+    case 'echo':
+      ctx.arc(-s * 0.22, 0, s * 0.55, -Math.PI * 0.7, Math.PI * 0.7);
+      ctx.moveTo(-s * 0.15, -s * 0.32); ctx.lineTo(-s * 0.15, s * 0.32);
+      break;
+    case 'detonate':
+      ctx.moveTo(0, -s * 0.6); ctx.lineTo(0, -s * 0.18);
+      ctx.moveTo(0, s * 0.18); ctx.lineTo(0, s * 0.6);
+      ctx.moveTo(-s * 0.6, 0); ctx.lineTo(-s * 0.18, 0);
+      ctx.moveTo(s * 0.18, 0); ctx.lineTo(s * 0.6, 0);
+      ctx.moveTo(-s * 0.35, -s * 0.35); ctx.lineTo(-s * 0.12, -s * 0.12);
+      ctx.moveTo(s * 0.35, -s * 0.35); ctx.lineTo(s * 0.12, -s * 0.12);
+      ctx.moveTo(-s * 0.35, s * 0.35); ctx.lineTo(-s * 0.12, s * 0.12);
+      ctx.moveTo(s * 0.35, s * 0.35); ctx.lineTo(s * 0.12, s * 0.12);
+      break;
+    case 'bomb':
+      ctx.arc(0, s * 0.12, s * 0.48, 0, Math.PI * 2);
+      ctx.moveTo(s * 0.18, -s * 0.3); ctx.quadraticCurveTo(s * 0.5, -s * 0.55, s * 0.22, -s * 0.7);
+      break;
+    case 'sniper':
+      ctx.arc(0, 0, s * 0.42, 0, Math.PI * 2);
+      ctx.moveTo(-s * 0.7, 0); ctx.lineTo(-s * 0.2, 0);
+      ctx.moveTo(s * 0.2, 0); ctx.lineTo(s * 0.7, 0);
+      ctx.moveTo(0, -s * 0.7); ctx.lineTo(0, -s * 0.2);
+      ctx.moveTo(0, s * 0.2); ctx.lineTo(0, s * 0.7);
+      break;
+    case 'melee':
+      ctx.moveTo(-s * 0.55, s * 0.45);
+      ctx.quadraticCurveTo(s * 0.1, s * 0.2, s * 0.55, -s * 0.5);
+      ctx.quadraticCurveTo(s * 0.1, -s * 0.18, -s * 0.35, s * 0.25);
+      ctx.closePath();
+      ctx.moveTo(-s * 0.55, s * 0.45); ctx.lineTo(-s * 0.7, s * 0.6);
+      break;
+    case 'pet':
+      ctx.arc(0, s * 0.2, s * 0.42, Math.PI, 0);
+      for (const px of [-0.34, 0, 0.34]) {
+        ctx.moveTo(s * px, -s * 0.05); ctx.arc(s * px, -s * 0.18, s * 0.14, 0, Math.PI * 2);
+      }
+      break;
+    case 'burrow':
+      ctx.moveTo(-s * 0.6, s * 0.05); ctx.quadraticCurveTo(0, -s * 0.55, s * 0.6, s * 0.05);
+      ctx.moveTo(0, -s * 0.55); ctx.lineTo(0, -s * 0.85);
+      ctx.moveTo(-s * 0.18, -s * 0.68); ctx.lineTo(0, -s * 0.85); ctx.lineTo(s * 0.18, -s * 0.68);
+      break;
+    case 'focus':
+      ctx.ellipse(0, 0, s * 0.62, s * 0.38, 0, 0, Math.PI * 2);
+      ctx.moveTo(0, -s * 0.22); ctx.lineTo(0, s * 0.22);
+      break;
+    case 'vision':
+      ctx.moveTo(-s * 0.6, -s * 0.25); ctx.lineTo(-s * 0.15, s * 0.15); ctx.lineTo(-s * 0.6, s * 0.3);
+      ctx.moveTo(-s * 0.45, s * 0.25); ctx.lineTo(s * 0.55, s * 0.25);
+      ctx.moveTo(s * 0.2, s * 0.25); ctx.lineTo(s * 0.35, -s * 0.1);
+      break;
+    case 'second':
+      ctx.moveTo(0, -s * 0.65); ctx.lineTo(s * 0.55, -s * 0.35);
+      ctx.lineTo(s * 0.45, s * 0.3); ctx.quadraticCurveTo(0, s * 0.65, -s * 0.45, s * 0.3);
+      ctx.lineTo(-s * 0.55, -s * 0.35); ctx.closePath();
+      break;
+    case 'life':
+      ctx.moveTo(0, s * 0.55);
+      ctx.bezierCurveTo(-s * 1.0, -s * 0.2, -s * 0.5, -s * 0.9, 0, -s * 0.3);
+      ctx.bezierCurveTo(s * 0.5, -s * 0.9, s * 1.0, -s * 0.2, 0, s * 0.55);
+      ctx.moveTo(-s * 0.22, s * 0.02); ctx.lineTo(s * 0.22, s * 0.02);
+      ctx.moveTo(0, -s * 0.2); ctx.lineTo(0, s * 0.24);
+      break;
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCardFace(id, x, y, w, h, alpha, showState, slot, scale) {
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  if (scale !== undefined && scale !== 1) {
+    const cx = x + w / 2, cy = y + h / 2;
+    ctx.translate(cx, cy); ctx.scale(scale, scale); ctx.translate(-cx, -cy);
+  }
+  const bright = 'rgba(126,249,208,.30)';
+  ctx.fillStyle = 'rgba(9,15,24,.94)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, 7); else ctx.rect(x, y, w, h);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(126,249,208,.42)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // clip for animations
+  ctx.save();
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x + 2, y + 2, w - 4, h - 4, 6); else ctx.rect(x + 2, y + 2, w - 4, h - 4);
+  ctx.clip();
+
+  let p = 0, phase = 'ready';
+  if (showState && slot) {
+    if (slot.phase === 'load') p = Math.min(1, slot.t / Math.max(0.01, slot.dur));
+    else if (slot.phase === 'cooldown') p = Math.min(1, slot.t / Math.max(0.01, slot.dur));
+    phase = slot.phase;
+  }
+
+  if (showState && slot && (phase === 'load' || phase === 'cooldown')) {
+    // 角形加载：以卡片中心为顶点；亮色扇面只增不减，另外叠加 2.5 圈旋转光痕
+    const cx = x + w / 2, cy = y + h / 2;
+    const radius = Math.hypot(w, h) * 0.72;
+    const start = -Math.PI / 2;
+    const sweep = p * Math.PI * 2;
+    const shine = -Math.PI / 2 + p * Math.PI * 5 + S.gameTime * 0.35;
+    ctx.fillStyle = bright;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, start, start + sweep);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(190,255,238,.65)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(start) * radius, cy + Math.sin(start) * radius);
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(start + sweep) * radius, cy + Math.sin(start + sweep) * radius);
+    ctx.stroke();
+    // 2.5 圈旋转光痕（只作为速度感，不改变亮色面积）
+    ctx.globalAlpha *= 0.45;
+    ctx.strokeStyle = 'rgba(235,255,250,.9)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(shine) * radius, cy + Math.sin(shine) * radius);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(235,255,250,.9)';
+    ctx.beginPath(); ctx.arc(cx + Math.cos(shine) * radius, cy + Math.sin(shine) * radius, 1.8, 0, 7); ctx.fill();
+    // 不耐烦：接近完成轻微抖动 + 脉冲
+    if (p > 0.82) ctx.translate(Math.sin(S.gameTime * 38) * 1.3 * (p - 0.82), 0);
+  } else if (showState && slot && phase === 'ready') {
+    ctx.fillStyle = bright;
+    ctx.fillRect(x, y, w, h);
+  }
+
+  // 耐久线：线下亮、线上暗；p=剩余/总
+  if (showState && slot && (phase === 'ready' || phase === 'cooldown')) {
+    const d = cardDurability(id, slot);
+    const lineY = y + h * (1 - Math.max(0, Math.min(1, d.p)));
+    ctx.fillStyle = 'rgba(6,10,16,.82)';
+    ctx.fillRect(x, y, w, Math.max(0, lineY - y));
+    ctx.strokeStyle = 'rgba(200,255,240,.55)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x + 4, lineY); ctx.lineTo(x + w - 4, lineY); ctx.stroke();
+  }
+  ctx.restore();
+
+  // 44px 方卡：图标 + 英文简写
+  drawCardSkillIcon(id, x + w / 2, y + h * 0.38, Math.min(w, h) * 0.30, 'rgba(220,255,245,.85)');
+  ctx.fillStyle = 'rgba(200,240,255,.78)';
+  ctx.font = '800 6px Consolas, "Courier New", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText(CARD_ABBR[id] || String(id).toUpperCase(), x + w / 2, y + h - 3);
+
+  if (showState && slot && phase === 'ready') {
+    ctx.strokeStyle = 'rgba(126,249,208,.9)'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x + 1, y + 1, w - 2, h - 2, 5); else ctx.rect(x + 1, y + 1, w - 2, h - 2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+const CARD_W = 44, CARD_H = 44, CARD_GAP = 16;
+const HUD_ICON_GAP = 52;
+function getCardLayout() {
+  const n = CARD_SKILLS.length;
+  if (!MOBILE || !S.cardMode) {
+    const r = 17, gap = HUD_ICON_GAP, cy = H - 186;
+    const icons = [];
+    for (let i = 0; i < n; i++) icons.push({ i, x: W / 2 - (n - 1) * gap / 2 + i * gap, y: cy });
+    const cardsW = CARD_SLOT_COUNT * CARD_W + (CARD_SLOT_COUNT - 1) * CARD_GAP;
+    const cardsX = W / 2 - cardsW / 2, cardY = H - 156;
+    const cards = [];
+    for (let i = 0; i < CARD_SLOT_COUNT; i++) cards.push({ i, x: cardsX + i * (CARD_W + CARD_GAP), y: cardY });
+    return {
+      mobile: false, r, icons, cards,
+      cardBlock: { left: cardsX, right: cardsX + cardsW, centerY: cardY + CARD_H / 2 },
+      leftJoyRight: 0, rightJoyLeft: W
+    };
+  }
+
+  // 手机：夹在左右手柄之间，整体下移到手柄中心
+  const iconCell = 44, iconRowH = 46;
+  const cardGap = 8, cardRowH = 62;
+  const leftJoyRight = 12 + 150 + 10;
+  const rightJoyLeft = W - leftJoyRight;
+  const availW = Math.max(160, rightJoyLeft - leftJoyRight);
+  const maxIcons = Math.max(1, Math.floor(availW / iconCell));
+  const iconRows = Math.ceil(n / maxIcons);
+  const perIcon = Math.ceil(n / iconRows);
+  const maxCards = Math.max(1, Math.floor(availW / (CARD_W + cardGap)));
+  const cardRows = Math.ceil(CARD_SLOT_COUNT / maxCards);
+  const perCard = Math.ceil(CARD_SLOT_COUNT / cardRows);
+  const groupGap = 6;
+  const groupH = iconRows * iconRowH + groupGap + cardRows * cardRowH;
+  const joyCenterY = H - 14 - 75;
+  let top = Math.min(joyCenterY - groupH / 2, H - 8 - groupH);
+  top = Math.max(0, top);
+
+  const icons = [];
+  for (let row = 0; row < iconRows; row++) {
+    const start = row * perIcon;
+    const count = Math.min(perIcon, n - start);
+    if (count <= 0) continue;
+    const rowW = (count - 1) * iconCell;
+    for (let j = 0; j < count; j++) {
+      icons.push({ i: start + j, x: W / 2 - rowW / 2 + j * iconCell, y: top + row * iconRowH + 17 });
+    }
+  }
+
+  const cardsTop = top + iconRows * iconRowH + groupGap;
+  const cards = [];
+  for (let row = 0; row < cardRows; row++) {
+    const start = row * perCard;
+    const count = Math.min(perCard, CARD_SLOT_COUNT - start);
+    if (count <= 0) continue;
+    const rowW = count * CARD_W + (count - 1) * cardGap;
+    for (let j = 0; j < count; j++) {
+      cards.push({ i: start + j, x: W / 2 - rowW / 2 + j * (CARD_W + cardGap), y: cardsTop + row * cardRowH });
+    }
+  }
+
+  const blockLeft = Math.min(...cards.map(c => c.x));
+  const blockRight = Math.max(...cards.map(c => c.x + CARD_W));
+  return {
+    mobile: true, r: 17, icons, cards, iconRows, cardRows, groupH, top,
+    leftJoyRight, rightJoyLeft, availW,
+    cardBlock: { left: blockLeft, right: blockRight, centerY: cardsTop + (cardRows - 1) * cardRowH / 2 + CARD_H / 2 }
+  };
+}
+
+function tryCardSkillTap(x, y) {
+  if (!MOBILE || !S.cardMode || !S.running || S.over || S.paused) return false;
+  const L = getCardLayout();
+  for (const p of L.icons) {
+    if (Math.hypot(x - p.x, y - p.y) <= 24) {
+      quickUseSkill(CARD_SKILLS[p.i]);
+      return true;
+    }
+  }
+  return false;
+}
+function drawCardSlots() {
+  if (!S.cardMode || !S.cards.length || S.skillHudAlpha < 0.01) return;
+  const L = getCardLayout();
+  ctx.save();
+  ctx.globalAlpha = S.skillHudAlpha;
+
+  for (const cp of L.cards) {
+    const i = cp.i;
+    const slot = S.cards[i];
+    const x = cp.x;
+    const bob = (slot.phase === 'switch' || slot.phase === 'delete' || slot.phase === 'return') ? 0 : Math.sin(S.gameTime * 2.4 + i * 0.9) * 1;
+    const y = cp.y + bob;
+
+    if (slot.phase === 'empty') {
+      ctx.strokeStyle = 'rgba(130,170,220,.20)'; ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x, y, CARD_W, CARD_H, 5); else ctx.rect(x, y, CARD_W, CARD_H);
+      ctx.stroke(); ctx.setLineDash([]);
+      continue;
+    }
+
+    if (slot.phase === 'return') {
+      const p = Math.min(1, slot.t / CARD_RETURN_TIME);
+      const e = 1 - Math.pow(1 - p, 2);
+      const targetX = slot.returnX !== undefined ? slot.returnX : x;
+      const targetY = slot.returnY !== undefined ? slot.returnY : y;
+      const tx = x + (targetX - x) * e;
+      const ty = y + (targetY - y) * e;
+      ctx.save();
+      ctx.globalAlpha = 1 - e;
+      drawCardFace(slot.id, tx, ty, CARD_W, CARD_H, 1, false, null, 1 - e * 0.45);
+      ctx.restore();
+      continue;
+    }
+
+    if (slot.phase === 'switch' || slot.phase === 'delete') {
+      const p = Math.min(1, slot.t / CARD_SLIDE_TIME);
+      const e = 1 - Math.pow(1 - p, 3);
+      ctx.save();
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x, y, CARD_W, CARD_H, 5); else ctx.rect(x, y, CARD_W, CARD_H);
+      ctx.clip();
+      if (slot.id) {
+        const oy = slot.oldStartY + (CARD_H - slot.oldStartY) * e;
+        drawCardFace(slot.id, x, y + oy, CARD_W, CARD_H, 1 - e * 0.45, false, null, 1 - e * 0.12);
+      }
+      if (slot.phase === 'switch' && slot.targetId) {
+        const ny = -CARD_H + CARD_H * e;
+        drawCardFace(slot.targetId, x, y + ny, CARD_W, CARD_H, 0.45 + e * 0.55, false, null, 0.88 + e * 0.12);
+      }
+      ctx.restore();
+    } else {
+      const f = slot.flash || 0;
+      const pulse = slot.phase === 'load' ? 1 + 0.018 * Math.sin(S.gameTime * 12) : 1;
+      drawCardFace(slot.id, x, y, CARD_W, CARD_H, 1, true, slot, (1 + f * 0.07) * pulse);
+      const bt = cardBubbleText(slot.id, slot);
+      if (bt) drawSkillBubble(x + CARD_W / 2, y + CARD_H + 2, bt, 'rgba(126,249,208,.5)', 1, true, 1 + (slot.bubblePop || 0) * 0.25);
+    }
+  }
+  if (MOBILE) drawCardSideStatus(L);
+  ctx.restore();
+}
+
+function drawCardSideStatus(L) {
+  const left = [], right = [];
+  if (S.sniperMode) left.push({ text: `SNIPE ${S.sniperMag}`, color: '232,244,255' });
+  if (S.focusActive) left.push({ text: 'FOCUS', color: '126,249,208' });
+  if (S.secondChance) left.push({ text: 'SECOND', color: '0,255,204' });
+  if (S.visionTimer > 0) right.push({ text: `VISION ${Math.ceil(S.visionTimer)}`, color: '192,132,252' });
+  if (S.burrowTimer > 0) right.push({ text: `BURROW ${S.burrowTimer.toFixed(1)}`, color: '126,249,208' });
+  if (S.pets.length > 0) right.push({ text: `PET ${S.pets.length}`, color: '255,209,92' });
+  const cy = L.cardBlock.centerY;
+  const leftSpace = L.cardBlock.left - 10 - L.leftJoyRight;
+  const rightSpace = L.rightJoyLeft - (L.cardBlock.right + 10);
+  if (leftSpace >= 56) drawCardStatusChips(left, L.cardBlock.left - 10, cy, true);
+  if (rightSpace >= 56) drawCardStatusChips(right, L.cardBlock.right + 10, cy, false);
+}
+
+function drawCardStatusChips(list, edgeX, cy, alignRight) {
+  if (!list.length) return;
+  const h = 12, gap = 3;
+  const total = list.length * h + (list.length - 1) * gap;
+  let y = cy - total / 2;
+  ctx.save();
+  ctx.font = '800 6px Consolas, "Courier New", monospace';
+  ctx.textBaseline = 'middle';
+  for (const c of list) {
+    const w = Math.max(30, ctx.measureText(c.text).width + 12);
+    const x = alignRight ? edgeX - w : edgeX;
+    ctx.fillStyle = 'rgba(7,12,20,.82)';
+    ctx.strokeStyle = `rgba(${c.color},.5)`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, h, 4); else ctx.rect(x, y, w, h);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = `rgba(${c.color},.95)`;
+    ctx.beginPath(); ctx.arc(x + 6, y + h / 2, 2, 0, 7); ctx.fill();
+    ctx.fillStyle = `rgba(${c.color},.9)`;
+    ctx.textAlign = 'left';
+    ctx.fillText(c.text, x + 11, y + h / 2 + 0.5);
+    y += h + gap;
+  }
+  ctx.restore();
 }
 
 function updateBuffsUI(force) {
@@ -1472,6 +2317,27 @@ function nextWave() {
     life: hasBoss ? 2.0 : 1.5
   };
   sfx(520, 0.12, 'triangle', 0.04);
+
+  if (S.wave > PRESET_WAVES && !S.cardMode) {
+    S.cardMode = true;
+    S.cards = makeCardSlots();
+    S.skillHudHidden = false;
+    S.skillHudAlpha = 1;
+    S.deleteArmed = 0;
+    if (MOBILE) {
+      const ms = document.getElementById('mobileSkills');
+      if (ms) ms.style.display = 'none';
+      showSkillToast('残响卡槽已启用：点击技能图标装载');
+    } else {
+      showSkillToast('残响卡槽已启用：数字装载 / D+槽位删除 / H 隐藏');
+    }
+  } else if (S.wave <= PRESET_WAVES) {
+    S.cardMode = false; S.cards = []; S.deleteArmed = 0;
+    if (MOBILE) {
+      const ms = document.getElementById('mobileSkills');
+      if (ms) ms.style.display = '';
+    }
+  }
 
   const n = S.wave;
   const baseTotal = n <= PRESET_WAVES
@@ -2089,7 +2955,7 @@ function pickupPowerup(pu) {
   if (pu.type === 'egg') {
     if (S.eggStacks < PET_MAX_STACKS) {
       S.eggStacks++;
-      S.banner = { text: MOBILE ? '获得：宠物蛋（点宠物召唤）' : `获得：宠物蛋（${keyLabel(KEYBINDS.summonPet)} 召唤）`, life: 1.4 };
+      S.banner = { text: `获得宠物蛋 +1（剩余 ${S.eggStacks}）`, life: 1.3 };
       sfx(620, 0.12, 'sine', 0.04);
       setTimeout(() => sfx(940, 0.12, 'sine', 0.03), 80);
     } else {
@@ -2227,10 +3093,14 @@ function destroyEcho(echo) {
 function summonPets() {
   if (!S.running || S.over || S.paused) return;
   if (S.eggStacks <= 0 || S.petCd > 0) return;
-  const cap = S.eggStacks * PET_PER_CAST;
-  const room = cap - S.pets.length;
-  if (room <= 0) return;
+  const room = PET_MAX_ALIVE - S.pets.length;
+  if (room <= 0) {
+    if (!S.cardMode) S.banner = { text: '宠物已满', life: 0.8 };
+    else showSkillToast('宠物已满');
+    return;
+  }
   const count = Math.min(PET_PER_CAST, room);
+  S.eggStacks--;
   const p = S.player;
   for (let i = 0; i < count; i++) {
     const cfg = PET_TYPES[Math.floor(Math.random() * PET_TYPES.length)];
@@ -2718,6 +3588,7 @@ function update(dt) {
 
   updatePets(dt);
   updateBlocks(dt);
+  updateCards(dt);
 
   for (let i = S.pBullets.length - 1; i >= 0; i--) {
     const b = S.pBullets[i];
@@ -3275,7 +4146,8 @@ function render() {
   drawSniperCrosshair();
   drawBossBar();
   drawMinimap();
-  if (!MOBILE) drawSkillHUD();
+  if (!MOBILE || S.cardMode) drawSkillHUD();
+  if (!MOBILE || S.cardMode) drawCardSlots();
   drawBlindBadge();
 
   // 广域视野：紫色边缘提示
@@ -3484,9 +4356,9 @@ function getSkillHudStates() {
     },
     {
       id: 'pet', label: '宠物', color: '255,209,92',
-      show: S.eggStacks > 0 && (S.pets.length > 0 || S.petCd > 0),
-      active: S.eggStacks > 0 && S.petCd <= 0 && S.pets.length < S.eggStacks * PET_PER_CAST,
-      progress: S.petCd > 0 ? 1 - S.petCd / PET_CD : Math.min(1, S.pets.length / Math.max(1, S.eggStacks * PET_PER_CAST))
+      show: S.eggStacks > 0 || S.pets.length > 0 || S.petCd > 0,
+      active: S.eggStacks > 0 && S.petCd <= 0 && S.pets.length < PET_MAX_ALIVE,
+      progress: S.petCd > 0 ? 1 - S.petCd / PET_CD : Math.min(1, S.pets.length / PET_MAX_ALIVE)
     },
     {
       id: 'burrow', label: '遁地', color: '126,249,208',
@@ -3513,18 +4385,24 @@ function getSkillHudStates() {
       active: !!S.secondChance,
       progress: S.secondChance ? 1 : 0
     },
+    {
+      id: 'life', label: '生命', color: '255,120,160',
+      show: false,
+      active: !!S.player && S.player.hp < HP_BAR_MAX,
+      progress: S.player ? Math.min(1, S.player.hp / HP_BAR_MAX) : 0
+    },
   ];
 }
 
 function updateSkillFades(dt) {
-  if (MOBILE) return;
+  if (MOBILE && !S.cardMode) return;
   const states = getSkillHudStates();
   const k = Math.min(1, dt * 6);
   const decay = Math.pow(0.03, dt);
-  let any = false;
+  let any = S.cardMode ? !S.skillHudHidden : false;
   for (let i = 0; i < states.length; i++) {
     const st = states[i];
-    if (st.show) any = true;
+    if (!S.cardMode && st.show) any = true;
     const target = st.active ? 1 : 0.28;
     const f = S.skillFade[st.id] || 0;
     S.skillFade[st.id] = f + (target - f) * k;
@@ -3539,22 +4417,23 @@ function updateSkillFades(dt) {
 }
 
 function drawSkillHUD() {
-  if (MOBILE || !S.map || !S.player || S.skillHudAlpha < 0.01) return;
+  if ((MOBILE && !S.cardMode) || !S.map || !S.player || S.skillHudAlpha < 0.01) return;
   const states = getSkillHudStates();
-  const n = states.length, gap = 58, r = 17;
-  const startX = W / 2 - (n - 1) * gap / 2;
-  const cy = H - 142;
+  const L = getCardLayout();
+  const r = L.r;
   const rowA = S.skillHudAlpha;
 
   ctx.save();
   ctx.translate(0, (1 - rowA) * 9);
 
-  for (let i = 0; i < n; i++) {
+  for (const p of L.icons) {
+    const i = p.i;
     const st = states[i];
+    if (!st) continue;
     const a = S.skillFade[st.id] || 0;
     const pop = S.skillPop[st.id] || 0;
-    const scale = 0.9 + 0.1 * a + 0.18 * pop;
-    const x = startX + i * gap;
+    const scale = 0.9 + 0.1 * a + 0.18 * pop + 0.012 * Math.sin(S.gameTime * 2.2 + i * 0.8);
+    const x = p.x, cy = p.y;
 
     ctx.save();
     ctx.translate(x, cy);
@@ -3588,6 +4467,10 @@ function drawSkillHUD() {
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     ctx.fillText(st.label, x, cy + r * scale + 3);
     ctx.restore();
+    if (S.cardMode) {
+      const bt = skillBadgeText(st.id);
+      if (bt) drawSkillBubble(x, cy + 4, bt, `rgba(${st.color},.55)`, rowA, true, 1 + (S.skillBadgePop && S.skillBadgePop[st.id] ? S.skillBadgePop[st.id] * 0.3 : 0));
+    }
   }
   ctx.restore();
 }
@@ -3680,6 +4563,17 @@ function drawSkillGlyph(id, x, y, r, color, alpha) {
     ctx.bezierCurveTo(-r, -r * 0.3, -r * 0.5, -r, 0, -r * 0.45);
     ctx.bezierCurveTo(r * 0.5, -r, r, -r * 0.3, 0, r * 0.45);
     ctx.fill();
+  } else if (id === 'life') {
+    ctx.beginPath();
+    ctx.moveTo(0, r * 0.62);
+    ctx.bezierCurveTo(-r * 1.05, -r * 0.2, -r * 0.55, -r * 0.95, 0, -r * 0.35);
+    ctx.bezierCurveTo(r * 0.55, -r * 0.95, r * 1.05, -r * 0.2, 0, r * 0.62);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.65)'; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.28, 0); ctx.lineTo(r * 0.28, 0);
+    ctx.moveTo(0, -r * 0.28); ctx.lineTo(0, r * 0.28);
+    ctx.stroke();
   }
   ctx.restore();
 }
@@ -4255,7 +5149,6 @@ function loop(ts) {
   let dt = (ts - lastTs) / 1000;
   lastTs = ts;
   if (dt > 0.05) dt = 0.05;
-  if (MOBILE && window.innerHeight > window.innerWidth) { render(); return; }
   if (S.running && !S.over && !S.paused && S.player) update(dt);
   render();
 }
@@ -4277,7 +5170,7 @@ function togglePause() {
 
 function showPause() {
   currentUI = 'pause';
-  overlay.classList.remove('scroll');
+  overlay.classList.remove('scroll'); overlay.classList.remove('start-mode');
   overlay.innerHTML = `
     <p class="dead" style="color:#5fb8ff">PAUSED</p>
     <h2>已暂停</h2>
@@ -4295,7 +5188,7 @@ function showPause() {
 
 function showSettings(returnTo) {
   settingsReturn = returnTo; currentUI = 'settings'; bindingAction = null;
-  overlay.classList.remove('scroll');
+  overlay.classList.remove('scroll'); overlay.classList.remove('start-mode');
   let rows = '';
   for (const action in BIND_LABELS) {
     rows += `<div class="bindRow"><span>${BIND_LABELS[action]}</span><button class="bindKey" data-bind="${action}">${keyLabel(KEYBINDS[action])}</button></div>`;
@@ -4367,6 +5260,34 @@ window.addEventListener('keydown', (e) => {
   if (!S.running || S.over || S.paused) return;
 
   keys[k] = true;
+
+  if (S.cardMode) {
+    if (k === 'd' && !e.repeat) dDownAt = performance.now();
+    if (k === 'h' && !e.repeat) {
+      S.skillHudHidden = !S.skillHudHidden;
+      showSkillToast(S.skillHudHidden ? '技能栏已隐藏（H 恢复）' : '技能栏已显示');
+      e.preventDefault();
+      return;
+    }
+    const ci = cardKeyIndex(k);
+    if (ci >= 0 && !e.repeat) {
+      if (keys['d'] && performance.now() - dDownAt < 320 && ci < 5) {
+        deleteCardSlot(ci);
+        e.preventDefault();
+        return;
+      }
+      if (ci < CARD_SKILLS.length) {
+        quickUseSkill(CARD_SKILLS[ci]);
+        e.preventDefault();
+        return;
+      }
+    }
+    if (k === KEYBINDS.placeBlock && !e.repeat) placeBlock();
+    if (k === KEYBINDS.toggleMap && !e.repeat) { e.preventDefault(); S.mini.global = true; updateMinimapLabel(); }
+    if ((k === KEYBINDS.pause || k === 'escape') && !e.repeat) togglePause();
+    return;
+  }
+
   if (k === KEYBINDS.spawnEcho && !e.repeat) spawnEcho();
   if (k === KEYBINDS.toggleSniper && !e.repeat) toggleSniper();
   if (k === KEYBINDS.sniperShoot && !e.repeat) sniperShoot();
@@ -4396,8 +5317,9 @@ window.addEventListener('blur', () => {
 });
 
 window.addEventListener('mousemove', (e) => {
-  S.mouse.x = e.clientX; S.mouse.y = e.clientY;
-  const hot = minimapHit(e.clientX, e.clientY);
+  const sp = toStagePoint(e.clientX, e.clientY);
+  S.mouse.x = sp.x; S.mouse.y = sp.y;
+  const hot = minimapHit(sp.x, sp.y);
   if (hot !== S.mini.hot) {
     S.mini.hot = hot;
     minimapWrap.classList.toggle('hot', hot);
@@ -4408,6 +5330,10 @@ canvas.addEventListener('mousedown', (e) => {
   initAudio();
   if (MOBILE) return;
   if (!S.running || S.over || S.paused) return;
+  if (S.cardMode) {
+    if (e.button === 2 && S.sniperMode) sniperShoot();
+    return;
+  }
   if (e.button === 0) {
     if (S.sniperMode) {
       S.focusActive = true;           // 狙击：左键放慢移速、提高精度
@@ -4444,7 +5370,14 @@ detonateBtn.addEventListener('click', () => {
 let touchAnchor = null;
 canvas.addEventListener('touchstart', (e) => {
   initAudio();
-  if (MOBILE) { e.preventDefault(); return; }
+  if (MOBILE) {
+    const t0 = e.touches[0];
+    if (t0) {
+      const sp = toStagePoint(t0.clientX, t0.clientY);
+      if (tryCardSkillTap(sp.x, sp.y)) { e.preventDefault(); return; }
+    }
+    e.preventDefault(); return;
+  }
   const t = e.touches[0];
   touchAnchor = { x: t.clientX, y: t.clientY };
   S.mouse.x = t.clientX; S.mouse.y = t.clientY;
@@ -4485,7 +5418,8 @@ function bindJoystick(el, state) {
   const knob = el.querySelector('.joyKnob');
   let pid = null, cx = 0, cy = 0, radius = 48;
   function apply(x, y) {
-    let dx = x - cx, dy = y - cy;
+    const sp = toStagePoint(x, y);
+    let dx = sp.x - cx, dy = sp.y - cy;
     const dist = Math.hypot(dx, dy);
     const mag = Math.min(1, dist / radius);
     if (dist > radius) { dx = dx / dist * radius; dy = dy / dist * radius; }
@@ -4500,7 +5434,8 @@ function bindJoystick(el, state) {
     pid = e.pointerId;
     try { el.setPointerCapture(pid); } catch (err) {}
     const r = el.getBoundingClientRect();
-    cx = r.left + r.width / 2; cy = r.top + r.height / 2;
+    const c = toStagePoint(r.left + r.width / 2, r.top + r.height / 2);
+    cx = c.x; cy = c.y;
     radius = Math.min(r.width, r.height) * 0.34;
     state.active = true;
     el.classList.add('active');
@@ -4622,10 +5557,9 @@ function updateMobileHUD() {
   if (mSub('echo')) mSub('echo').textContent = `⚡${S.energy}`;
   mSkillEls.detonate.classList.toggle('off', S.echoes.length === 0 && S.detonateCd <= 0);
   if (mSub('detonate')) mSub('detonate').textContent = S.detonateCd > 0 ? `${S.detonateCd.toFixed(1)}s` : String(S.echoes.length);
-  const petCap = S.eggStacks * PET_PER_CAST;
-  mSkillEls.pet.classList.toggle('off', S.eggStacks <= 0 || (S.petCd <= 0 && S.pets.length >= petCap));
-  mSkillEls.pet.classList.toggle('on', S.eggStacks > 0 && S.petCd <= 0 && S.pets.length < petCap);
-  if (mSub('pet')) mSub('pet').textContent = S.eggStacks <= 0 ? '未解锁' : (S.petCd > 0 ? `${S.petCd.toFixed(1)}s` : `x${S.eggStacks}`);
+  mSkillEls.pet.classList.toggle('off', S.eggStacks <= 0 || S.pets.length >= PET_MAX_ALIVE || S.petCd > 0);
+  mSkillEls.pet.classList.toggle('on', S.eggStacks > 0 && S.petCd <= 0 && S.pets.length < PET_MAX_ALIVE);
+  if (mSub('pet')) mSub('pet').textContent = S.eggStacks <= 0 ? '无蛋' : (S.petCd > 0 ? `${S.petCd.toFixed(1)}s` : `x${S.eggStacks}`);
   mSkillEls.block.classList.toggle('off', S.blockItems <= 0);
   if (mSub('block')) mSub('block').textContent = String(S.blockItems);
   mSkillEls.burrow.classList.toggle('on', S.burrowTimer > 0);
@@ -4639,56 +5573,25 @@ updateMobileHUD();
 // ============================================================
 function showStart() {
   currentUI = 'start';
-  overlay.classList.add('scroll');
-  const visionBank = loadVisionState();
-  const moveKeys = `${keyLabel(KEYBINDS.moveUp)}${keyLabel(KEYBINDS.moveLeft)}${keyLabel(KEYBINDS.moveDown)}${keyLabel(KEYBINDS.moveRight)}`;
-  const keysHtml = MOBILE ? `
-      <div><b>移动</b>左摇杆（模拟量，带加减速）</div>
-      <div><b>瞄准 / 射击</b>右摇杆，推杆自动开火</div>
-      <div><b>技能按钮</b>残影 · 宠物 · 方块 · 遁地 · 引爆 · 爆破 · 狙击 · 飞刀 · 精准</div>
-      <div><b>遁地</b>点「遁地」：2 秒钻入地下，期间不受攻击</div>
-      <div><b>狙击</b>点「狙击」切换，右摇杆推满单发（带红外辅助线）</div>
-      <div><b>飞刀</b>按住「飞刀」蓄力，松手投掷</div>
-      <div><b>精准</b>点「精准」切换：减速、提高精度</div>
-      <div><b>地图</b>点小地图切换全局 / 局部</div>
-      <div><b>暂停</b>左上角 ⏸</div>` : `
-      <div><b>移动</b>${moveKeys} / 方向键</div>
-      <div><b>瞄准</b>鼠标（自动射击）</div>
-      <div><b>全局地图</b>按住 ${keyLabel(KEYBINDS.toggleMap)}（悬停小地图可放大）</div>
-      <div><b>召唤残影</b>${keyLabel(KEYBINDS.spawnEcho)}</div>
-      <div><b>召唤宠物</b>${keyLabel(KEYBINDS.summonPet)}（吃蛋解锁，可叠层）</div>
-      <div><b>放置方块</b>${keyLabel(KEYBINDS.placeBlock)}（堡垒掉落）</div>
-      <div><b>遁地</b>${keyLabel(KEYBINDS.burrow)}（2 秒无敌，地下不能射击）</div>
-      <div><b>引爆残影</b>底部按钮</div>
-      <div><b>狙击切换</b>${keyLabel(KEYBINDS.toggleSniper)}</div>
-      <div><b>狙击发射</b>右键单发（每发装填）/ ${keyLabel(KEYBINDS.sniperShoot)}</div>
-      <div><b>精准</b>狙击时按住左键：减速、提高精度</div>
-      <div><b>飞刀投掷</b>长按左键蓄力</div>
-      <div><b>爆破子弹</b>${keyLabel(KEYBINDS.blow)}（CD 5 秒）</div>
-      <div><b>暂停 / 设置</b>${keyLabel(KEYBINDS.pause)} / Esc</div>`;
+  overlay.classList.add('start-mode');
+  overlay.classList.remove('scroll');
   overlay.innerHTML = `
-    <h1>时之残影</h1>
-    <p class="sub">射速被削弱，道具变得稀有。<br>每 3 波 Boss 会和小怪一起出现在地图里——它会发射环形弹幕与瞄准三连。<br>地图更大、怪物分布在各个区域，清完一波需要走遍地图；远处怪物会在你靠近时苏醒。<br>每一波都会按地图文件重构战场，${MOBILE ? '点按小地图可切换全局视野' : `按 <b style="color:#fff">${keyLabel(KEYBINDS.toggleMap)}</b> 可查看全局地图`}。<br>拾取 <b style="color:#e8f4ff">狙击弹夹</b> 或 <b style="color:#5fb8ff">飞刀</b> 可解锁强力战术。<br><b style="color:#ffd15c">开局 3 秒金身</b>；前 5 关为预设地图，之后进入程序化地图。<br>视野银行：<b style="color:#c084fc">${Math.floor(visionBank)} 秒</b>（跨局累计，开局最多启用 ${VISION_START_CAP} 秒）。</p>
-    <div class="keys">${keysHtml}
-    </div>
-    <p class="sub" style="font-size:11px;color:rgba(180,200,230,.4);">
-      ⚡ 射速提升 · 🔱 三向散射 · 🎯 狙击弹夹 · 🗡 飞刀 · 🟢 回血<br>
-      🟡 爆破（推开子弹并震伤敌人） · 💚 第二次机会（免死一次） · 🟣 广域视野（拉远镜头）<br>
-      🥚 宠物蛋（召唤 4 只金色友军，可叠加） · 🧱 方块（按 B 放置，阻挡怪物）<br>
-      飞刀每次消耗 2 把；wave 8 后回血可溢出，血条最多显示 8 格<br>
-      遁地 ${keyLabel(KEYBINDS.burrow)}：2 秒无敌；开局金身 3 秒；wave 6 起进入程序化地图
-    </p>
-    <div class="btnRow">
-      <button data-action="start">开 始</button>
-      <button data-action="settings" class="secondary">⚙ 设置</button>
+    <div id="startScreen">
+      <div id="startBg"></div>
+      <a id="startHelp" class="startIcon" href="help.html" target="_blank" rel="noopener" title="帮助">?</a>
+      <button id="startSettings" class="startIcon" data-action="settings" title="设置">⚙</button>
+      <div class="startTitle">时之残影</div>
+      <button id="startBtn" data-action="start">开 始</button>
+      ${MOBILE ? '' : '<button id="debugToggle" data-action="debug">调试模式：直接进入卡槽 · 关</button>'}
     </div>
   `;
   overlay.classList.remove('hidden');
+  updateDebugUI();
 }
 
 function showGameOver() {
   currentUI = 'gameover';
-  overlay.classList.remove('scroll');
+  overlay.classList.remove('scroll'); overlay.classList.remove('start-mode');
   const rank = S.score >= 600 ? '时之主宰 👑' : S.score >= 400 ? '完美协奏 ✦' : S.score >= 250 ? '残影大师' : S.score >= 120 ? '初窥门径' : '被时间吞没';
   overlay.innerHTML = `
     <p class="dead">SIGNAL LOST</p>
@@ -4700,6 +5603,7 @@ function showGameOver() {
     </p>
     <div class="btnRow">
       <button data-action="start">再 来 一 次</button>
+      <button data-action="startScreen" class="secondary">回到开始界面</button>
       <button data-action="settingsGameOver" class="secondary">⚙ 设置</button>
     </div>
   `;
@@ -4725,10 +5629,12 @@ overlay.addEventListener('click', (e) => {
   if (!btn) return;
   const act = btn.dataset.action;
 
+  if (act === 'debug') { toggleDebugMode(); return; }
   if (act === 'start' || act === 'restart') {
     tryForceLandscape();
     initAudio(); overlay.classList.add('hidden'); resize(); initGame(); lastTs = 0; currentUI = 'playing';
-  } else if (act === 'settings') showSettings('start');
+  } else if (act === 'startScreen') { S.running = false; S.over = true; S.paused = false; showStart(); }
+  else if (act === 'settings') showSettings('start');
   else if (act === 'settingsGameOver') showSettings('gameover');
   else if (act === 'pauseSettings') showSettings('pause');
   else if (act === 'resume') togglePause();
@@ -4744,6 +5650,11 @@ S.player = { x: W / 2, y: H / 2, r: PLAYER_BASE_R, hp: 3, invuln: 0, angle: 0 };
 S.mouse = { x: W / 2, y: H / 2 - 150 };
 hpBar.innerHTML = '<span class="hpSeg"></span><span class="hpSeg"></span><span class="hpSeg"></span>';
 updateMinimapLabel();
+debugCardMode = loadDebugMode();
+if (/[?&]debug=1(?:&|$)/.test(location.search)) {
+  debugCardMode = true;
+  saveDebugMode(true);
+}
 showStart();
 window.addEventListener('pagehide', () => {
   if (S.running && S.player) saveVisionState(S.visionBank + S.visionTimer);
