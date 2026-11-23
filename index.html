@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>时之残影 · Echoes</title>
+<script>
+  // Supabase 配置：使用公开的 publishable key，绝不能填 service_role / secret。
+  // 留空时自动回退到原来的 WebSocket 服务器。
+  window.SUPABASE_URL = 'https://rdxnhiyoobwyonyqygqc.supabase.co';
+  window.SUPABASE_ANON_KEY = 'sb_publishable_g4TINCvwTK0j2HBHWd-sjQ_CquDL0U9';
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{width:100%;height:100%;overflow:hidden;background:#0a0b10;
@@ -115,11 +122,52 @@
   .startTitle{position:relative;z-index:1;font-size:clamp(36px,6.5vw,64px);font-weight:900;letter-spacing:7px;background:linear-gradient(135deg,#7ef9d0,#5fb8ff 55%,#c084fc);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 26px rgba(95,184,255,.35))}
   #startBtn{position:relative;z-index:1;margin-top:46px;padding:15px 66px;border-radius:30px;border:1px solid rgba(126,249,208,.55);background:rgba(12,24,34,.78);color:#bfffe9;font-family:inherit;font-size:18px;font-weight:900;letter-spacing:8px;cursor:pointer;box-shadow:0 0 26px rgba(126,249,208,.18);transition:transform .2s,box-shadow .2s,background .2s}
   #startBtn:hover{transform:translateY(-2px);box-shadow:0 0 40px rgba(126,249,208,.3);background:rgba(20,44,52,.9)}
-  #debugToggle{position:absolute;left:18px;bottom:18px;z-index:2;margin:0;padding:8px 14px;border-radius:16px;border:1px solid rgba(130,170,240,.28);background:rgba(10,16,26,.72);color:rgba(200,220,245,.55);font-family:inherit;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:none}
+#startNameRow{position:relative;z-index:2;display:flex;align-items:center;gap:10px;margin-top:18px;color:rgba(190,215,240,.55);font-size:11px;letter-spacing:2px}
+#playerName{width:180px;padding:8px 12px;border-radius:9px;border:1px solid rgba(130,170,240,.25);background:rgba(8,14,24,.75);color:#d8ecff;font-family:inherit;font-size:12px;text-align:center;outline:none}
+#playerName:focus{border-color:rgba(126,249,208,.55);box-shadow:0 0 12px rgba(126,249,208,.12)}
+#startMulti{position:relative;z-index:1;margin-top:14px;padding:9px 26px;border-radius:20px;border:1px solid rgba(95,184,255,.35);background:rgba(8,16,28,.7);color:#9ed8ff;font-family:inherit;font-size:12px;font-weight:800;letter-spacing:3px;cursor:pointer}
+#startMulti:hover{background:rgba(16,34,52,.9);border-color:rgba(126,249,208,.55)}
+#startGuestRow{position:relative;z-index:2;display:flex;align-items:center;gap:8px;margin-top:10px;color:rgba(190,215,240,.5);font-size:10px;letter-spacing:1px}
+#guestCode{width:150px;padding:8px 10px;border-radius:9px;border:1px solid rgba(95,184,255,.28);background:rgba(8,14,24,.75);color:#d8ecff;font-family:Consolas,monospace;font-size:12px;text-align:center;letter-spacing:2px;outline:none;text-transform:uppercase}
+#guestCode:focus{border-color:rgba(126,249,208,.55);box-shadow:0 0 12px rgba(126,249,208,.1)}
+#startGuestRow button{padding:8px 16px;border-radius:9px;border:1px solid rgba(126,249,208,.32);background:rgba(8,22,24,.7);color:#9ef9d8;font-family:inherit;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer}
+#startGuestRow button:hover{background:rgba(14,40,38,.9);border-color:rgba(126,249,208,.6)}
+.mpWrap{width:min(560px,90vw);max-height:78vh;overflow:auto;padding:22px 24px;border:1px solid rgba(126,249,208,.2);border-radius:14px;background:rgba(7,12,20,.9);box-shadow:0 18px 50px rgba(0,0,0,.4)}
+.mpWrap h2{margin:0 0 4px;letter-spacing:3px}
+.mpSub{font-size:11px;color:rgba(180,205,235,.5);line-height:1.6;margin:0 0 16px}
+.mpRow{display:flex;gap:8px;align-items:center;margin-top:10px}
+.mpRow input{flex:1;padding:9px 12px;border-radius:8px;border:1px solid rgba(130,170,240,.25);background:rgba(8,14,24,.8);color:#d8ecff;font-family:inherit;font-size:12px;outline:none}
+.mpRow input:focus{border-color:rgba(126,249,208,.55)}
+.mpRow button{padding:9px 14px;white-space:nowrap}
+.mpCode{font-family:Consolas,"Courier New",monospace;font-size:28px;letter-spacing:7px;color:#7ef9d0;text-align:center;margin:14px 0;text-shadow:0 0 18px rgba(126,249,208,.35)}
+.mpPlayers{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.mpPlayer{display:flex;justify-content:space-between;padding:7px 10px;border-radius:7px;background:rgba(255,255,255,.035);font-size:12px;color:rgba(220,238,255,.8)}
+.mpPlayer .tag{font-size:9px;color:rgba(126,249,208,.75);letter-spacing:1px}
+.mpStatus{font-size:11px;color:rgba(180,205,235,.55);min-height:18px;margin:8px 0}
+.mpActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.mpActions button{padding:8px 14px;font-size:11px}
+.mpHint{font-size:10px;color:rgba(180,205,235,.4);line-height:1.6;margin-top:12px}  #debugToggle{position:absolute;left:18px;bottom:18px;z-index:2;margin:0;padding:8px 14px;border-radius:16px;border:1px solid rgba(130,170,240,.28);background:rgba(10,16,26,.72);color:rgba(200,220,245,.55);font-family:inherit;font-size:11px;font-weight:800;letter-spacing:1px;cursor:pointer;box-shadow:none}
   #debugToggle:hover{transform:none;box-shadow:none;background:rgba(18,28,42,.9)}
   #debugToggle.on{border-color:#ffd15c;color:#ffd15c;background:rgba(60,45,10,.55);box-shadow:0 0 16px rgba(255,209,92,.16)}
   body.mobile #debugToggle{display:none}
-  #changelog{position:absolute;right:18px;bottom:18px;z-index:2;width:320px;max-height:272px;padding:12px 14px;border:1px solid rgba(126,249,208,.22);border-radius:12px;background:linear-gradient(180deg,rgba(8,15,24,.84),rgba(5,10,18,.92));box-shadow:0 10px 32px rgba(0,0,0,.35);backdrop-filter:blur(8px);display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+#cardAutoBar{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:16;display:none;align-items:center;gap:6px;padding:4px 6px;border:1px solid rgba(126,249,208,.22);border-radius:18px;background:rgba(7,12,20,.82);backdrop-filter:blur(6px)}
+#cardAutoBar button{padding:5px 10px;border-radius:12px;border:1px solid rgba(130,170,240,.25);background:rgba(10,16,26,.8);color:rgba(200,230,255,.7);font-family:inherit;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer}
+#cardAutoBar button:hover{background:rgba(20,40,52,.9)}
+#cardAutoToggle.on{border-color:rgba(255,209,102,.6);color:#ffd166}
+#cardPriorityBtn{border-color:rgba(126,249,208,.35);color:#7ef9d0}
+body.mobile #cardAutoBar{top:6px;gap:4px;padding:3px 4px}
+body.mobile #cardAutoBar button{font-size:9px;padding:4px 7px}
+.prioSection{margin-top:18px;padding-top:14px;border-top:1px solid rgba(130,170,240,.12)}
+.prioSection h3{margin:0 0 6px;font-size:14px;color:#cfe0ff;letter-spacing:1px}
+.prioSection .sub{margin:0 0 10px;font-size:10px;color:rgba(180,200,230,.5)}
+.prioList{display:flex;flex-direction:column;gap:4px}
+.prioRow{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:7px;background:rgba(10,16,26,.6)}
+.prioNum{width:16px;font-family:Consolas,monospace;font-size:9px;color:rgba(126,249,208,.7);text-align:right}
+.prioName{flex:1;font-size:11px;color:rgba(220,238,255,.82)}
+.prioName em{margin-left:8px;font-family:Consolas,monospace;font-size:8px;font-style:normal;color:rgba(180,210,240,.45);letter-spacing:1px}
+.prioMove{width:24px;height:22px;padding:0;border-radius:5px;border:1px solid rgba(130,170,240,.2);background:rgba(255,255,255,.04);color:rgba(220,240,255,.75);font-size:10px;cursor:pointer}
+.prioMove:disabled{opacity:.25;cursor:default}
+.prioAutoRow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}  #changelog{position:absolute;right:18px;bottom:18px;z-index:2;width:320px;max-height:272px;padding:12px 14px;border:1px solid rgba(126,249,208,.22);border-radius:12px;background:linear-gradient(180deg,rgba(8,15,24,.84),rgba(5,10,18,.92));box-shadow:0 10px 32px rgba(0,0,0,.35);backdrop-filter:blur(8px);display:flex;flex-direction:column;gap:8px;pointer-events:auto}
   .clHead{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;font-weight:900;letter-spacing:2px;color:rgba(210,235,255,.86)}
   .clHead span{font-family:Consolas,"Courier New",monospace;font-size:9px;letter-spacing:1px;color:#7ef9d0;border:1px solid rgba(126,249,208,.35);border-radius:9px;padding:2px 7px}
   .clList{display:flex;flex-direction:column;gap:7px;overflow-y:auto;padding-right:4px;scrollbar-width:thin;scrollbar-color:rgba(126,249,208,.3) transparent}
@@ -337,6 +385,11 @@
   <button id="mobilePause" aria-label="暂停">⏸</button>
 </div>
 
+<div id="cardAutoBar">
+  <button id="cardAutoToggle">AUTO 关</button>
+  <button id="cardPriorityBtn">优先</button>
+</div>
+
 <div id="energyWrap">
   <div id="energyBar"><div id="energyFill"></div></div>
   <div id="energyRow">
@@ -534,11 +587,46 @@ const CARD_SLOT_COUNT = 5;
 const CARD_SLIDE_TIME = 1.0;
 const CARD_LOAD_TIME = 1.2;
 const CARD_RETURN_TIME = 0.45;
-const CARD_SKILLS = ['echo','detonate','bomb','sniper','melee','pet','burrow','focus','vision','second','life'];
-const CARD_NAMES = { echo:'残影', detonate:'引爆', bomb:'爆破', sniper:'狙击', melee:'飞刀', pet:'宠物', burrow:'遁地', focus:'精准', vision:'视野', second:'免死', life:'生命' };
-const CARD_ABBR = { echo:'ECHO', detonate:'DET', bomb:'BOMB', sniper:'SNIPE', melee:'BLADE', pet:'PET', burrow:'BURROW', focus:'FOCUS', vision:'VISION', second:'SECOND', life:'LIFE' };
-const CARD_GROUPS = { echo:1, detonate:1, bomb:1, sniper:6, melee:2, pet:1, burrow:1, focus:1, vision:18, second:1, life:1 };
-const CARD_AUTO = { echo:'repeat', detonate:'repeat', bomb:'repeat', sniper:'toggle', melee:'repeat', pet:'repeat', burrow:'repeat', focus:'toggle', vision:'duration', second:'passive', life:'repeat' };
+const SPREAD_MAX_STACKS = 4;
+const SCOPE_4_LENGTH = 900;
+const SCOPE_8_LENGTH = 1800;
+const SCOPE_END_WIDTH = 150;
+const CARD_SKILLS = ['echo','detonate','bomb','sniper','melee','pet','burrow','focus','vision','second','life','rapid','spread','scope4','scope8'];
+const CARD_NAMES = { echo:'残影', detonate:'引爆', bomb:'爆破', sniper:'狙击', melee:'飞刀', pet:'宠物', burrow:'遁地', focus:'精准', vision:'视野', second:'免死', life:'生命', rapid:'加快射速', spread:'三向散射', scope4:'4倍镜', scope8:'8倍镜' };
+const CARD_ABBR = { echo:'ECHO', detonate:'DET', bomb:'BOMB', sniper:'SNIPE', melee:'BLADE', pet:'PET', burrow:'BURROW', focus:'FOCUS', vision:'VISION', second:'SECOND', life:'LIFE', rapid:'RAPID', spread:'SPREAD', scope4:'4X', scope8:'8X' };
+const CARD_GROUPS = { echo:1, detonate:1, bomb:1, sniper:6, melee:2, pet:1, burrow:1, focus:1, vision:18, second:1, life:1, rapid:1, spread:1, scope4:1, scope8:1 };
+const CARD_AUTO = { echo:'repeat', detonate:'repeat', bomb:'repeat', sniper:'toggle', melee:'repeat', pet:'repeat', burrow:'repeat', focus:'toggle', vision:'duration', second:'passive', life:'repeat', rapid:'repeat', spread:'repeat', scope4:'repeat', scope8:'repeat' };
+const CARD_PRIORITY_KEY = 'echoes_card_priority_v1';
+const CARD_AUTO_KEY = 'echoes_card_auto_v1';
+const DEFAULT_CARD_PRIORITY = ['spread','rapid','sniper','melee','pet','life','echo','detonate','bomb','burrow','focus','vision','second','scope4','scope8'];
+let cardPriority = DEFAULT_CARD_PRIORITY.slice();
+let cardAutoEnabled = false;
+let autoCardTimer = 0.4;
+function normalizeCardPriority(list) {
+  const out = [];
+  if (Array.isArray(list)) {
+    for (const id of list) {
+      if (CARD_SKILLS.includes(id) && !out.includes(id)) out.push(id);
+    }
+  }
+  for (const id of CARD_SKILLS) if (!out.includes(id)) out.push(id);
+  return out;
+}
+function loadCardPrefs() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CARD_PRIORITY_KEY) || '[]');
+    cardPriority = normalizeCardPriority(raw.length ? raw : DEFAULT_CARD_PRIORITY);
+  } catch (e) {
+    cardPriority = normalizeCardPriority(DEFAULT_CARD_PRIORITY);
+  }
+  try { cardAutoEnabled = localStorage.getItem(CARD_AUTO_KEY) === '1'; } catch (e) { cardAutoEnabled = false; }
+}
+function saveCardPriority() {
+  try { localStorage.setItem(CARD_PRIORITY_KEY, JSON.stringify(cardPriority)); } catch (e) {}
+}
+function saveCardAuto() {
+  try { localStorage.setItem(CARD_AUTO_KEY, cardAutoEnabled ? '1' : '0'); } catch (e) {}
+}
 const PET_TYPES = [
   { type: 'tracker',  shape: 'tri',     speed: 150, damage: 0.7, atkCd: 0.8 },
   { type: 'hunter',   shape: 'diamond', speed: 170, damage: 0.6, atkCd: 0.7 },
@@ -752,9 +840,10 @@ function sfx(freq, dur = 0.06, type = 'sine', vol = 0.03) {
 //  状态
 // ============================================================
 const S = {
-  player: null, enemies: [], pBullets: [], eBullets: [], echoes: [], particles: [], shockwaves: [],
+  player: null, player2: null, guestInput: null, aiMate: null, scopeLevel: 0, enemies: [], pBullets: [], eBullets: [], echoes: [], particles: [], shockwaves: [],
   powerups: [],
   buffs: { fireRate: 0, spread: 0 },
+  rapidStacks: 0, spreadStacks: 0,
   powerupTimer: POWERUP_SPAWN_INTERVAL,
   buffUITimer: 0,
   bossRef: null,
@@ -826,9 +915,12 @@ function initGame() {
     saveVisionState(S.visionBank + S.visionTimer);
   }
   S.player = { x: W / 2, y: H / 2, r: PLAYER_BASE_R, hp: 3, invuln: 0, angle: -Math.PI / 2 };
+  S.player2 = null; S.guestInput = null;
+  S.aiMate = null;
   S.enemies = []; S.pBullets = []; S.eBullets = []; S.echoes = []; S.particles = []; S.shockwaves = [];
   S.powerups = [];
   S.buffs = { fireRate: 0, spread: 0 };
+  S.rapidStacks = 0; S.spreadStacks = 0; S.scopeLevel = 0;
   S.powerupTimer = POWERUP_SPAWN_INTERVAL; S.buffUITimer = 0;
   S.bossRef = null;
   S.history = []; S.score = 0; S.wave = 0; S.combo = 0; S.comboTimer = 0;
@@ -997,7 +1089,17 @@ function showSkillToast(text) {
 
 // 调试：卡槽模式直启
 const DEBUG_CARD_KEY = 'echoes_debug_card_v1';
-let debugCardMode = false;
+const PLAYER_NAME_KEY = 'echoes_player_name_v1';
+let playerName = '玩家';
+function loadPlayerName() {
+  try {
+    const n = localStorage.getItem(PLAYER_NAME_KEY);
+    if (n && n.trim()) playerName = n.trim().slice(0, 12);
+  } catch (e) {}
+}
+function savePlayerName() {
+  try { localStorage.setItem(PLAYER_NAME_KEY, playerName); } catch (e) {}
+}let debugCardMode = false;
 function loadDebugMode() {
   try { return localStorage.getItem(DEBUG_CARD_KEY) === '1'; } catch (e) { return false; }
 }
@@ -1021,7 +1123,7 @@ function toggleDebugMode() {
 function makeCardSlots() {
   const out = [];
   for (let i = 0; i < CARD_SLOT_COUNT; i++) {
-    out.push({ id: null, targetId: null, phase: 'empty', t: 0, dur: 0, oldStartY: 0, flash: 0, bubblePop: 0, prevBubble: '', retry: 0, group: 0, maxGroup: 0 });
+    out.push({ id: null, targetId: null, phase: 'empty', t: 0, dur: 0, oldStartY: 0, flash: 0, bubblePop: 0, prevBubble: '', retry: 0, group: 0, maxGroup: 0, infinite: false });
   }
   return out;
 }
@@ -1060,6 +1162,10 @@ function cardSkillLoadable(id) {
     case 'vision': return S.visionBank > 0 || S.visionTimer > 0;
     case 'second': return !!S.secondChance;
     case 'life': return true;
+    case 'rapid': return true;
+    case 'spread': return true;
+    case 'scope4': return S.scopeLevel !== 4;
+    case 'scope8': return S.scopeLevel !== 8;
     default: return false;
   }
 }
@@ -1077,6 +1183,10 @@ function cardSkillUsable(id) {
     case 'vision': return S.visionBank > 0;
     case 'second': return false;
     case 'life': return true;
+    case 'rapid': return true;
+    case 'spread': return true;
+    case 'scope4': return S.scopeLevel !== 4;
+    case 'scope8': return S.scopeLevel !== 8;
     default: return false;
   }
 }
@@ -1095,6 +1205,8 @@ function cardGroupText(id, g) {
     case 'burrow': return `${g}`;
     case 'focus': return `${g}`;
     case 'second': return `${g}`;
+    case 'rapid': return `+${g}`;
+    case 'spread': return `+${g}`;
     default: return String(g);
   }
 }
@@ -1121,11 +1233,14 @@ function skillBadgeText(id) {
     }
     case 'second': return S.secondChance ? '1' : '';
     case 'life': return '+1';
+    case 'rapid': return S.rapidStacks ? `+${S.rapidStacks * 50}%` : '';
+    case 'spread': return S.spreadStacks ? `+${S.spreadStacks}` : '';
     default: return '';
   }
 }
 
 function cardBubbleText(id, slot) {
+  if (slot && slot.infinite) return '∞';
   const g = (slot && slot.group) || CARD_GROUPS[id] || 1;
   return cardGroupText(id, g);
 }
@@ -1153,6 +1268,7 @@ function startCardSwitch(slot, newId) {
   slot.oldStartY = oldStart;
   slot.flash = 0;
   slot.retry = 0;
+  slot.infinite = false;
 }
 
 function startCardDelete(slot) {
@@ -1184,6 +1300,9 @@ function cardKeyIndex(k) {
   if (k === '0') return 9;
   if (k === '-') return 10;
   if (k === '=') return 11;
+  if (k === '[') return 12;
+  if (k === ']') return 13;
+  if (k === '\\') return 14;
   return -1;
 }
 function deleteCardSlot(i) {
@@ -1194,25 +1313,17 @@ function deleteCardSlot(i) {
 
 function quickUseSkill(id) {
   if (!S.cardMode || !CARD_NAMES[id]) return;
-  let slot = S.cards.find(c => c.id === id || c.targetId === id);
-  if (!slot) {
-    slot = S.cards.find(c => c.phase === 'empty');
-    if (!slot) slot = S.cards[0];
-    if (!cardSkillLoadable(id)) {
-      showSkillToast(`无法装载：${CARD_NAMES[id]}`);
-      return;
-    }
-    const replacing = slot.phase !== 'empty';
-    const grp = CARD_GROUPS[id] || 1;
-    startCardSwitch(slot, id);
-    showSkillToast(`${replacing ? '替换' : '装载'} ${CARD_NAMES[id]}（一组 ${cardGroupText(id, grp)}）→ 槽位${S.cards.indexOf(slot) + 1}`);
+  if (!cardSkillLoadable(id)) {
+    showSkillToast(`无法装载：${CARD_NAMES[id]}`);
     return;
   }
-  if (slot.phase === 'switch' || slot.phase === 'load') showSkillToast(`装载中：${CARD_NAMES[id]}`);
-  else if (slot.phase === 'return') showSkillToast(`正在收回背包：${CARD_NAMES[id]}`);
-  else if (slot.phase === 'cooldown') showSkillToast(`自动冷却中：${CARD_NAMES[id]}`);
-  else if (slot.phase === 'ready') showSkillToast(`已装载：${CARD_NAMES[id]}（自动生效后收回）`);
-  else showSkillToast(`${CARD_NAMES[id]} 正在删除`);
+  // 同一个技能可以重复装载：永远找下一个空槽，而不是复用已有槽
+  let slot = S.cards.find(c => c.phase === 'empty');
+  const replacing = !slot;
+  if (!slot) slot = S.cards[0];
+  const grp = CARD_GROUPS[id] || 1;
+  startCardSwitch(slot, id);
+  showSkillToast(`${replacing ? '替换' : '装载'} ${CARD_NAMES[id]}（一组 ${cardGroupText(id, grp)}）→ 槽位${S.cards.indexOf(slot) + 1}`);
 }
 
 function cardDepleted(id) {
@@ -1261,6 +1372,18 @@ function autoCastSlot(slot) {
   if (!S.running || S.over || S.paused || !slot.id) return;
   const id = slot.id;
   const kind = CARD_AUTO[id] || 'repeat';
+
+  if (id === 'spread' && (S.spreadStacks || 0) >= SPREAD_MAX_STACKS) {
+    slot.phase = 'cooldown';
+    slot.t = 0;
+    slot.dur = Infinity;
+    slot.infinite = true;
+    slot.flash = 0.5;
+    slot.bubblePop = 1;
+    S.banner = { text: '', life: 0 };
+    showSkillToast(`三向散射已满 ${SPREAD_MAX_STACKS} 层 · 卡片陷入无限冷却`);
+    return;
+  }
 
   if (kind === 'passive') {
     returnCardToBag(slot, `被动保持 · 已收回背包：${CARD_NAMES[id]}`);
@@ -1329,6 +1452,10 @@ function applyCardSkill(id) {
     }
     case 'second': return false;
     case 'life': S.player.hp += 1; updateHUD(); return true;
+    case 'rapid': S.rapidStacks += 1; return true;
+    case 'spread': if ((S.spreadStacks || 0) >= SPREAD_MAX_STACKS) return false; S.spreadStacks += 1; return true;
+    case 'scope4': if (S.scopeLevel === 4) return false; S.scopeLevel = 4; showSkillToast('4倍镜已启用 · 光锥视野'); return true;
+    case 'scope8': if (S.scopeLevel === 8) return false; S.scopeLevel = 8; showSkillToast('8倍镜已启用 · 更远光锥'); return true;
     default: return false;
   }
 }
@@ -1363,6 +1490,7 @@ function updateCards(dt) {
         slot.id = null;
         slot.phase = 'empty';
         slot.t = 0;
+        slot.infinite = false;
         slot.prevBubble = '';
       }
       continue;
@@ -1383,6 +1511,7 @@ function updateCards(dt) {
           slot.id = null;
           slot.phase = 'empty';
           slot.t = 0;
+          slot.infinite = false;
           slot.prevBubble = '';
         }
       }
@@ -1398,6 +1527,15 @@ function updateCards(dt) {
       if (slot.retry <= 0) autoCastSlot(slot);
     }
   }
+
+  if (cardAutoEnabled) {
+    autoCardTimer -= dt;
+    if (autoCardTimer <= 0) {
+      autoCardTimer = 0.45;
+      autoEquipOne();
+    }
+  }
+  updateCardAutoUI();
 }
 
 function drawSkillBubble(x, y, text, color, alpha, center, scale, small) {
@@ -1497,6 +1635,20 @@ function drawCardSkillIcon(id, cx, cy, s, color) {
       ctx.moveTo(-s * 0.22, s * 0.02); ctx.lineTo(s * 0.22, s * 0.02);
       ctx.moveTo(0, -s * 0.2); ctx.lineTo(0, s * 0.24);
       break;
+    case 'rapid':
+      for (let i = 0; i < 3; i++) {
+        const x = -s * 0.55 + i * s * 0.34;
+        ctx.moveTo(x, -s * 0.55); ctx.lineTo(x + s * 0.3, 0); ctx.lineTo(x, s * 0.55);
+      }
+      break;
+    case 'spread':
+      ctx.moveTo(0, s * 0.55);
+      ctx.lineTo(-s * 0.72, -s * 0.62);
+      ctx.moveTo(0, s * 0.55);
+      ctx.lineTo(0, -s * 0.8);
+      ctx.moveTo(0, s * 0.55);
+      ctx.lineTo(s * 0.72, -s * 0.62);
+      break;
   }
   ctx.stroke();
   ctx.restore();
@@ -1580,6 +1732,18 @@ function drawCardFace(id, x, y, w, h, alpha, showState, slot, scale) {
   ctx.font = '800 6px Consolas, "Courier New", monospace';
   ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
   ctx.fillText(CARD_ABBR[id] || String(id).toUpperCase(), x + w / 2, y + h - 3);
+
+  if (showState && slot && slot.infinite) {
+    ctx.fillStyle = '#ff9a66';
+    ctx.font = '800 11px Consolas, "Courier New", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('∞', x + w / 2, y + h * 0.68);
+    ctx.strokeStyle = 'rgba(255,120,90,.7)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x + 1, y + 1, w - 2, h - 2, 5); else ctx.rect(x + 1, y + 1, w - 2, h - 2);
+    ctx.stroke();
+  }
 
   if (showState && slot && phase === 'ready') {
     ctx.strokeStyle = 'rgba(126,249,208,.9)'; ctx.lineWidth = 2;
@@ -1668,8 +1832,70 @@ function tryCardSkillTap(x, y) {
       return true;
     }
   }
+  for (const cp of L.cards) {
+    if (x >= cp.x && x <= cp.x + CARD_W && y >= cp.y && y <= cp.y + CARD_H) {
+      const slot = S.cards[cp.i];
+      if (slot && slot.phase !== 'empty') { startCardDelete(slot); return true; }
+    }
+  }
   return false;
 }
+
+function updateCardAutoUI() {
+  const bar = document.getElementById('cardAutoBar');
+  if (!bar) return;
+  const show = S.cardMode && S.running && !S.over && !S.paused && currentUI === 'playing';
+  bar.style.display = show ? 'flex' : 'none';
+  const b = document.getElementById('cardAutoToggle');
+  if (b) {
+    b.textContent = `AUTO ${cardAutoEnabled ? '开' : '关'}`;
+    b.classList.toggle('on', cardAutoEnabled);
+  }
+}
+
+function toggleCardAuto() {
+  cardAutoEnabled = !cardAutoEnabled;
+  saveCardAuto();
+  if (cardAutoEnabled) autoCardTimer = 0.25;
+  updateCardAutoUI();
+  showSkillToast(`自动装载：${cardAutoEnabled ? '开启' : '关闭'}`);
+}
+
+function autoCanAddCard(id) {
+  if (!cardSkillLoadable(id)) return false;
+  if (id === 'scope4' || id === 'scope8') { return S.scopeLevel <= 0; }
+  if (id === 'spread') {
+    const pending = S.cards.filter(c =>
+      !c.infinite &&
+      (c.id === 'spread' || c.targetId === 'spread') &&
+      (c.phase === 'switch' || c.phase === 'load' || c.phase === 'ready' || c.phase === 'cooldown')
+    ).length;
+    return (S.spreadStacks || 0) + pending < SPREAD_MAX_STACKS;
+  }
+  return true;
+}
+
+function autoEquipOne() {
+  if (!S.cardMode || !cardAutoEnabled || !S.running || S.over || S.paused) return;
+  if (!S.cards.some(c => c.phase === 'empty')) return;
+  for (const id of (cardPriority.length ? cardPriority : DEFAULT_CARD_PRIORITY)) {
+    if (autoCanAddCard(id)) {
+      quickUseSkill(id);
+      return;
+    }
+  }
+}
+
+function moveCardPriority(id, dir) {
+  const i = cardPriority.indexOf(id);
+  if (i < 0) return;
+  const j = i + dir;
+  if (j < 0 || j >= cardPriority.length) return;
+  [cardPriority[i], cardPriority[j]] = [cardPriority[j], cardPriority[i]];
+  saveCardPriority();
+  showSettings(settingsReturn);
+}
+
 function drawCardSlots() {
   if (!S.cardMode || !S.cards.length || S.skillHudAlpha < 0.01) return;
   const L = getCardLayout();
@@ -2261,7 +2487,7 @@ function mouseWorld() {
 
 function updateCamera(dt, snap) {
   if (!S.map || !S.player) return;
-  const targetZoom = S.visionTimer > 0 ? VISION_ZOOM : 1;
+  const targetZoom = S.scopeLevel === 8 ? 0.40 : (S.scopeLevel === 4 ? 0.58 : (S.visionTimer > 0 ? VISION_ZOOM : 1));
   if (snap) S.cam.zoom = targetZoom;
   else S.cam.zoom += (targetZoom - S.cam.zoom) * Math.min(1, dt * 3.0);
 
@@ -2570,7 +2796,8 @@ function triggerBomb() {
 // ============================================================
 function playerShoot(now) {
   if (S.burrowTimer > 0) return;
-  const cd = S.buffs.fireRate > 0 ? PLAYER_SHOT_CD_FAST : PLAYER_SHOT_CD;
+  const rapidMult = Math.pow(1.5, S.rapidStacks || 0);
+  const cd = (S.buffs.fireRate > 0 ? PLAYER_SHOT_CD_FAST : PLAYER_SHOT_CD) / rapidMult;
   if (now - S.lastShot < cd * 1000) return;
   S.lastShot = now;
 
@@ -2581,7 +2808,7 @@ function playerShoot(now) {
   const baseAngle = Math.atan2(dy, dx);
   p.angle = baseAngle;
 
-  const count = S.buffs.spread > 0 ? 3 : 1;
+  const count = 1 + (S.spreadStacks || 0) + (S.buffs.spread > 0 ? 2 : 0);
   const spreadStep = 0.14;
 
   for (let i = 0; i < count; i++) {
@@ -3200,6 +3427,75 @@ function updatePets(dt) {
   }
 }
 
+function updateAiMate(dt) {
+  if (!S.aiMate || !S.player) return;
+  const m = S.aiMate, p = S.player;
+  const tx = p.x - 54, ty = p.y + 34;
+  const dx = tx - m.x, dy = ty - m.y;
+  const d = Math.hypot(dx, dy) || 1;
+  const sp = Math.min(1, dt * 3.4);
+  m.x += dx * sp;
+  m.y += dy * sp;
+  if (S.map) {
+    m.x = Math.max(m.r, Math.min(S.map.w - m.r, m.x));
+    m.y = Math.max(m.r, Math.min(S.map.h - m.r, m.y));
+    resolveCircleWalls(m);
+    resolveCircleBlocks(m, false);
+  }
+  let target = null, best = 700 * 700;
+  for (const en of S.enemies) {
+    if (en.delay > 0 || en.dormant) continue;
+    const ddx = en.x - m.x, ddy = en.y - m.y;
+    const d2 = ddx * ddx + ddy * ddy;
+    if (d2 < best) { best = d2; target = en; }
+  }
+  if (target) {
+    const lead = 0.07;
+    const ax = target.x + (target.vx || 0) * lead;
+    const ay = target.y + (target.vy || 0) * lead;
+    m.angle = Math.atan2(ay - m.y, ax - m.x);
+    m.cd -= dt;
+    if (m.cd <= 0) {
+      m.cd = 0.16;
+      const nx = Math.cos(m.angle), ny = Math.sin(m.angle);
+      S.pBullets.push({
+        x: m.x + nx * (m.r + 3), y: m.y + ny * (m.r + 3),
+        vx: nx * 820, vy: ny * 820, r: 3.2, life: 999,
+        damage: BULLET_DAMAGE * 1.15, color: '#7ef9d0', echo: false, aiMate: true
+      });
+      sfx(920, 0.03, 'triangle', 0.012);
+    }
+  } else {
+    m.cd = Math.min(m.cd, 0.12);
+  }
+}
+
+function drawAiMate() {
+  const m = S.aiMate;
+  if (!m) return;
+  ctx.save();
+  ctx.translate(m.x, m.y);
+  ctx.strokeStyle = 'rgba(126,249,208,.75)';
+  ctx.fillStyle = 'rgba(8,20,24,.9)';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.arc(0, 0, m.r + 4, 0, 7); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, -m.r * 0.9);
+  ctx.lineTo(m.r * 0.75, m.r * 0.65);
+  ctx.lineTo(0, m.r * 0.3);
+  ctx.lineTo(-m.r * 0.75, m.r * 0.65);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.rotate(m.angle);
+  ctx.beginPath(); ctx.moveTo(m.r * 0.3, 0); ctx.lineTo(m.r + 7, 0); ctx.stroke();
+  ctx.restore();
+  ctx.save();
+  ctx.fillStyle = 'rgba(126,249,208,.8)';
+  ctx.font = '800 8px -apple-system, "PingFang SC", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('AI', m.x, m.y - m.r - 8);
+  ctx.restore();
+}
+
 function drawPets() {
   if (!S.pets.length) return;
   for (const pet of S.pets) {
@@ -3323,6 +3619,7 @@ function update(dt) {
     S.mouse.y = sy + Math.sin(S.aimAngle) * 400;
   }
   const mw = mouseWorld();
+  if (netRole === 'guest') { netGuestUpdate(dt, mw); return; }
 
   if (p.invuln > 0) p.invuln -= dt;
   if (S.echoCd > 0) S.echoCd -= dt;
@@ -3508,7 +3805,7 @@ function update(dt) {
         if (d2 < nd) { nd = d2; nearest = en; }
       }
       if (nearest && nd < 450 * 450) {
-        e.shootCd = S.buffs.fireRate > 0 ? ECHO_SHOT_CD_FAST : ECHO_SHOT_CD;
+        e.shootCd = (S.buffs.fireRate > 0 ? ECHO_SHOT_CD_FAST : ECHO_SHOT_CD) / Math.pow(1.5, S.rapidStacks || 0);
         const dx = nearest.x - e.x, dy = nearest.y - e.y, d = Math.hypot(dx, dy) || 1;
         S.pBullets.push({ x: e.x, y: e.y, vx: dx / d * 680, vy: dy / d * 680, r: 3, life: 999, damage: BULLET_DAMAGE, color: '#5fb8ff', echo: true });
         sfx(760, 0.03, 'sine', 0.01);
@@ -3521,11 +3818,12 @@ function update(dt) {
     en.age += dt;
     if (en.delay > 0) { en.delay -= dt; continue; }
     if (en.hitFlash > 0) en.hitFlash -= dt;
+    const tgt = netNearestPlayer(en);
 
     // 远处刷出的怪在玩家靠近或受伤前保持蛰伏，迫使玩家走遍地图
     if (en.dormant) {
       if (en.hp < en.maxHp) en.dormant = false;
-      else if (Math.hypot(p.x - en.x, p.y - en.y) < en.aggroRange) en.dormant = false;
+      else if (Math.hypot(tgt.x - en.x, tgt.y - en.y) < en.aggroRange) en.dormant = false;
       else continue;
     }
 
@@ -3535,7 +3833,7 @@ function update(dt) {
     for (const e of S.echoes) { if (Math.hypot(en.x - e.x, en.y - e.y) < SLOW_RADIUS) { speedMul = 0.5; break; } }
     if (en.pushSlow > 0) { en.pushSlow -= dt; speedMul *= (en.pushSlowFactor || 0.6); }
 
-    const dx = p.x - en.x, dy = p.y - en.y, d = Math.hypot(dx, dy) || 1;
+    const dx = tgt.x - en.x, dy = tgt.y - en.y, d = Math.hypot(dx, dy) || 1;
     const nx = dx / d, ny = dy / d;
 
     if (en.type === 'hunter') {
@@ -3558,8 +3856,10 @@ function update(dt) {
       if (en.fireCd <= 0 && d < 950) {
         en.fireCd = 2.6 + Math.random() * 0.9;
         const lead = 0.4;
-        const tx = p.x + S.pvx * lead;
-        const ty = p.y + S.pvy * lead;
+        const tvx = tgt === S.player ? S.pvx : (tgt.vx || 0);
+        const tvy = tgt === S.player ? S.pvy : (tgt.vy || 0);
+        const tx = tgt.x + tvx * lead;
+        const ty = tgt.y + tvy * lead;
         const aa = Math.atan2(ty - en.y, tx - en.x);
         S.eBullets.push({
           x: en.x, y: en.y, vx: Math.cos(aa) * 430, vy: Math.sin(aa) * 430,
@@ -3595,11 +3895,17 @@ function update(dt) {
       resolveCircleBlocks(en, en.type === 'fortress');
     }
 
-    const pd = Math.hypot(p.x - en.x, p.y - en.y);
-    if (!playerImmune() && pd < en.r + p.r) { hurtPlayer(); en.x -= nx * 40; en.y -= ny * 40; }
+    const pd = Math.hypot(tgt.x - en.x, tgt.y - en.y);
+    const tgtImmune = tgt === S.player ? playerImmune() : (tgt.invuln > 0 || tgt.down > 0);
+    if (!tgtImmune && pd < en.r + tgt.r) {
+      if (tgt === S.player) hurtPlayer(); else hurtGuestPlayer();
+      en.x -= nx * 40; en.y -= ny * 40;
+    }
   }
 
   updatePets(dt);
+  updateAiMate(dt);
+  updateGuestPlayer(dt);
   updateBlocks(dt);
   updateCards(dt);
 
@@ -3770,6 +4076,14 @@ function update(dt) {
         S.eBullets.splice(i, 1);
       }
     }
+    if (S.player2 && S.player2.down <= 0 && S.player2.invuln <= 0) {
+      const dx2 = b.x - S.player2.x, dy2 = b.y - S.player2.y;
+      const rr2 = b.r + S.player2.r;
+      if (dx2 * dx2 + dy2 * dy2 < rr2 * rr2) {
+        hurtGuestPlayer();
+        S.eBullets.splice(i, 1);
+      }
+    }
   }
 
   const damp = Math.pow(0.9, dt * 60);
@@ -3922,6 +4236,101 @@ function gameOver() {
 // ============================================================
 //  渲染
 // ============================================================
+function rayRectT(ox, oy, dx, dy, r) {
+  let tmin = 0, tmax = 1e9;
+  const p = [-dx, dx, -dy, dy];
+  const q = [ox - r.x, r.x + r.w - ox, oy - r.y, r.y + r.h - oy];
+  for (let i = 0; i < 4; i++) {
+    if (Math.abs(p[i]) < 1e-9) {
+      if (q[i] < 0) return -1;
+    } else {
+      const t = q[i] / p[i];
+      if (p[i] < 0) { if (t > tmin) tmin = t; }
+      else { if (t < tmax) tmax = t; }
+      if (tmin > tmax) return -1;
+    }
+  }
+  return tmin > 0 ? tmin : -1;
+}
+
+function rayCircleT(ox, oy, dx, dy, cx, cy, rad) {
+  const fx = ox - cx, fy = oy - cy;
+  const b = fx * dx + fy * dy;
+  const c = fx * fx + fy * fy - rad * rad;
+  const disc = b * b - c;
+  if (disc < 0) return -1;
+  const s = Math.sqrt(disc);
+  let t = -b - s;
+  if (t < 0) t = -b + s;
+  return t >= 0 ? t : -1;
+}
+
+function scopeVisibleWorld() {
+  if (!S.scopeLevel || !S.player) return null;
+  const len = S.scopeLevel === 8 ? SCOPE_8_LENGTH : SCOPE_4_LENGTH;
+  const half = Math.atan((SCOPE_END_WIDTH / 2) / len);
+  const aim = S.player.angle;
+  const N = 128;
+  const pts = [{ x: S.player.x, y: S.player.y }];
+  for (let i = 0; i <= N; i++) {
+    const a = aim - half + (2 * half) * (i / N);
+    const dx = Math.cos(a), dy = Math.sin(a);
+    let t = len;
+    if (S.map) {
+      for (const wl of S.map.walls) {
+        const rt = rayRectT(S.player.x, S.player.y, dx, dy, wl);
+        if (rt >= 0 && rt < t) t = rt;
+      }
+    }
+    for (const bl of S.blocks) {
+      const rt = rayRectT(S.player.x, S.player.y, dx, dy, bl);
+      if (rt >= 0 && rt < t) t = rt;
+    }
+    for (const en of S.enemies) {
+      if (en.type !== 'fortress' && en.type !== 'boss') continue;
+      const rt = rayCircleT(S.player.x, S.player.y, dx, dy, en.x, en.y, en.r);
+      if (rt >= 0 && rt < t) t = rt;
+    }
+    pts.push({ x: S.player.x + dx * t, y: S.player.y + dy * t });
+  }
+  return pts;
+}
+
+function drawScopeMask() {
+  if (!S.scopeLevel || !S.player) return;
+  const pts = scopeVisibleWorld();
+  if (!pts || pts.length < 3) return;
+  const zoom = S.cam.zoom || 1;
+  const sx = W / 2 + (S.player.x - S.cam.x) * zoom;
+  const sy = H / 2 + (S.player.y - S.cam.y) * zoom;
+  const screen = pts.map(p => ({
+    x: W / 2 + (p.x - S.cam.x) * zoom,
+    y: H / 2 + (p.y - S.cam.y) * zoom
+  }));
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, W, H);
+  ctx.moveTo(screen[0].x, screen[0].y);
+  for (let i = 1; i < screen.length; i++) ctx.lineTo(screen[i].x, screen[i].y);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0,0,0,0.965)';
+  ctx.fill('evenodd');
+
+  ctx.beginPath();
+  ctx.moveTo(screen[0].x, screen[0].y);
+  for (let i = 1; i < screen.length; i++) ctx.lineTo(screen[i].x, screen[i].y);
+  ctx.closePath();
+  ctx.strokeStyle = 'rgba(126,249,208,.16)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(126,249,208,.75)';
+  ctx.font = '800 10px -apple-system, "PingFang SC", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText((S.scopeLevel === 8 ? '8X' : '4X') + ' SCOPE', W / 2, 20);
+  ctx.restore();
+}
+
 function render() {
   ctx.fillStyle = '#05060a'; ctx.fillRect(0, 0, W, H);
 
@@ -4083,6 +4492,8 @@ function render() {
 
   drawPowerups();
   drawPlayer();
+  drawGuestPlayer();
+  drawAiMate();
   drawPlayerStatusAuras();
   drawSniperBarrel();
   
@@ -4155,6 +4566,7 @@ function render() {
   ctx.globalAlpha = 1;
   ctx.restore();
 
+  drawScopeMask();
   drawBlindMask();
   drawSniperCrosshair();
   drawBossBar();
@@ -4164,7 +4576,7 @@ function render() {
   drawBlindBadge();
 
   // 广域视野：紫色边缘提示
-  const vk = Math.max(0, Math.min(1, (1 - S.cam.zoom) / (1 - VISION_ZOOM)));
+  const vk = S.scopeLevel ? 0 : Math.max(0, Math.min(1, (1 - S.cam.zoom) / (1 - VISION_ZOOM)));
   if (vk > 0.01) {
     const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.28, W / 2, H / 2, Math.max(W, H) * 0.72);
     vg.addColorStop(0, 'rgba(192,132,252,0)');
@@ -4404,6 +4816,30 @@ function getSkillHudStates() {
       active: !!S.player && S.player.hp < HP_BAR_MAX,
       progress: S.player ? Math.min(1, S.player.hp / HP_BAR_MAX) : 0
     },
+    {
+      id: 'rapid', label: '射速', color: '255,209,102',
+      show: false,
+      active: S.rapidStacks > 0,
+      progress: Math.min(1, S.rapidStacks / 5)
+    },
+    {
+      id: 'spread', label: '散射', color: '126,249,208',
+      show: false,
+      active: S.spreadStacks > 0,
+      progress: Math.min(1, S.spreadStacks / 5)
+    },
+    {
+      id: 'scope4', label: '4倍镜', color: '255,160,80',
+      show: S.scopeLevel === 4,
+      active: S.scopeLevel === 4,
+      progress: S.scopeLevel === 4 ? 1 : 0
+    },
+    {
+      id: 'scope8', label: '8倍镜', color: '255,90,120',
+      show: S.scopeLevel === 8,
+      active: S.scopeLevel === 8,
+      progress: S.scopeLevel === 8 ? 1 : 0
+    },
   ];
 }
 
@@ -4587,6 +5023,32 @@ function drawSkillGlyph(id, x, y, r, color, alpha) {
     ctx.moveTo(-r * 0.28, 0); ctx.lineTo(r * 0.28, 0);
     ctx.moveTo(0, -r * 0.28); ctx.lineTo(0, r * 0.28);
     ctx.stroke();
+  } else if (id === 'rapid') {
+    for (let i = 0; i < 3; i++) {
+      const x = -r * 0.65 + i * r * 0.38;
+      ctx.beginPath();
+      ctx.moveTo(x, -r * 0.55); ctx.lineTo(x + r * 0.32, 0); ctx.lineTo(x, r * 0.55);
+      ctx.stroke();
+    }
+  } else if (id === 'spread') {
+    ctx.beginPath();
+    ctx.moveTo(0, r * 0.55); ctx.lineTo(-r * 0.72, -r * 0.62);
+    ctx.moveTo(0, r * 0.55); ctx.lineTo(0, -r * 0.82);
+    ctx.moveTo(0, r * 0.55); ctx.lineTo(r * 0.72, -r * 0.62);
+    ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, r * 0.55, r * 0.13, 0, 7); ctx.fill();
+  } else if (id === 'scope4' || id === 'scope8') {
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.76, 0, 7); ctx.stroke();
+    const ticks = id === 'scope8' ? 8 : 4;
+    for (let i = 0; i < ticks; i++) {
+      const a = -Math.PI / 2 + i / ticks * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * r * 0.48, Math.sin(a) * r * 0.48);
+      ctx.lineTo(Math.cos(a) * r * 0.78, Math.sin(a) * r * 0.78);
+      ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.16, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, 1.6, 0, 7); ctx.fill();
   }
   ctx.restore();
 }
@@ -5183,6 +5645,7 @@ function loop(ts) {
   lastTs = ts;
   if (dt > 0.05) dt = 0.05;
   if (S.running && !S.over && !S.paused && S.player) update(dt);
+  if (S.running && !S.over && !S.paused && netRole === 'host' && netPeerId && S.player) netHostTick(dt);
   render();
 }
 
@@ -5217,20 +5680,38 @@ function showPause() {
     </p>
   `;
   overlay.classList.remove('hidden');
+  updateCardAutoUI();
 }
 
 function showSettings(returnTo) {
   settingsReturn = returnTo; currentUI = 'settings'; bindingAction = null;
-  overlay.classList.remove('scroll'); overlay.classList.remove('start-mode');
+  overlay.classList.add('scroll'); overlay.classList.remove('start-mode');
   let rows = '';
   for (const action in BIND_LABELS) {
     rows += `<div class="bindRow"><span>${BIND_LABELS[action]}</span><button class="bindKey" data-bind="${action}">${keyLabel(KEYBINDS[action])}</button></div>`;
   }
+  let prioRows = '';
+  cardPriority.forEach((id, i) => {
+    prioRows += `<div class="prioRow">
+      <span class="prioNum">${i + 1}</span>
+      <span class="prioName">${CARD_NAMES[id] || id}<em>${CARD_ABBR[id] || ''}</em></span>
+      <button class="prioMove" data-prio="${id}" data-dir="-1" ${i === 0 ? 'disabled' : ''}>↑</button>
+      <button class="prioMove" data-prio="${id}" data-dir="1" ${i === cardPriority.length - 1 ? 'disabled' : ''}>↓</button>
+    </div>`;
+  });
   overlay.innerHTML = `
-    <h2>键位设置</h2>
+    <h2>设置</h2>
     <div class="bindList">${rows}</div>
+    <div class="prioSection">
+      <h3>自动卡槽优先级</h3>
+      <div class="prioAutoRow">
+        <p class="sub" style="margin:0;">Auto 按此顺序自动装载；超出叠加上限的技能会跳过。</p>
+        <button data-action="toggleAuto" class="secondary" style="padding:7px 12px;">AUTO ${cardAutoEnabled ? '开' : '关'}</button>
+      </div>
+      <div class="prioList">${prioRows}</div>
+    </div>
     <div class="btnRow">
-      <button data-action="resetBinds" class="secondary">恢复默认</button>
+      <button data-action="resetBinds" class="secondary">恢复默认键位</button>
       <button data-action="closeSettings">完 成</button>
     </div>
     <p class="sub" style="font-size:11px;color:rgba(180,200,230,.45);">
@@ -5238,6 +5719,7 @@ function showSettings(returnTo) {
     </p>
   `;
   overlay.classList.remove('hidden');
+  updateCardAutoUI();
 }
 
 function startBind(action) {
@@ -5614,11 +6096,42 @@ function showStart() {
       <a id="startHelp" class="startIcon" href="help.html" target="_blank" rel="noopener" title="帮助">?</a>
       <button id="startSettings" class="startIcon" data-action="settings" title="设置">⚙</button>
       <div class="startTitle">时之残影</div>
+      <div id="startNameRow"><span>名字（房主）</span><input id="playerName" maxlength="12" autocomplete="off" spellcheck="false" placeholder="玩家名字"></div>
       <button id="startBtn" data-action="start">开 始</button>
+      <button id="startMulti" data-action="multiplayer">多 人 · 开 房 间</button>
+      <div id="startGuestRow"><span>访客</span><input id="guestCode" maxlength="6" autocomplete="off" spellcheck="false" placeholder="输入房间号"><button data-action="guestJoin">直接加入</button></div>
       ${MOBILE ? '' : '<button id="debugToggle" data-action="debug">调试模式：直接进入卡槽 · 关</button>'}
       <div id="changelog" aria-label="更新日志">
-        <div class="clHead"><span>更新日志</span><span>v20</span></div>
+        <div class="clHead"><span>更新日志</span><span>v27</span></div>
         <div class="clList">
+          <div class="clItem">
+            <div class="clTop"><b>v27</b><span>2026-11-23</span></div>
+            <p>访客快速加入：开始界面输入 6 位房间号即可直接进入，自动生成「访客-XXXX」，无需设置名字；房主名字仅房主使用。</p>
+          </div>
+          <div class="clItem">
+            <div class="clTop"><b>v26</b><span>2026-11-23</span></div>
+            <p>新增 Supabase Realtime 传输：填 Project URL / anon key 后可在 Netlify 纯静态部署多人房间；保留旧 WebSocket 服务器回退。</p>
+          </div>
+          <div class="clItem">
+            <div class="clTop"><b>v25</b><span>2026-11-23</span></div>
+            <p>新增 4倍镜 / 8倍镜两张独立卡（] / \），互斥不叠加；开镜后光锥视野、末端开口固定、墙与堡垒遮光，未被照到的区域填黑。</p>
+          </div>
+          <div class="clItem">
+            <div class="clTop"><b>v24</b><span>2026-11-23</span></div>
+            <p>第二玩家主机权威同步：敌人双目标、P2 伤害/倒地重生、10Hz 快照与房间 relay；访客基础移动/射击。</p>
+          </div>
+          <div class="clItem">
+            <div class="clTop"><b>v23</b><span>2026-11-23</span></div>
+            <p>多人房间服务器、姓名、6 位房间号等待、AI 补位与本地高精度 AI 队友；双人战斗同步与 4x/8x 瞄准镜在下一阶段。</p>
+          </div>
+          <div class="clItem">
+            <div class="clTop"><b>v22</b><span>2026-11-23</span></div>
+            <p>三向散射上限 4 层，超出装载的卡槽进入无限冷却；新增 AUTO 自动装载、优先级编辑与跳过超限技能。</p>
+          </div>
+          <div class="clItem">
+            <div class="clTop"><b>v21</b><span>2026-11-22</span></div>
+            <p>同一技能可重复装载到下一个空槽；新增加快射速/三向散射技能，射速每层 +50%、散射每层 +1 发，可叠加保存。</p>
+          </div>
           <div class="clItem">
             <div class="clTop"><b>v20</b><span>2026-11-22</span></div>
             <p>每一关开局 3 秒金身；金身光效精简为 6 根快速旋转刻线与金色光晕。</p>
@@ -5645,6 +6158,743 @@ function showStart() {
   `;
   overlay.classList.remove('hidden');
   updateDebugUI();
+  updateCardAutoUI();
+  const pn = document.getElementById('playerName');
+  if (pn) {
+    pn.value = playerName;
+    pn.addEventListener('input', () => {
+      playerName = (pn.value || '').trim().slice(0, 12) || '玩家';
+      savePlayerName();
+      if (typeof mpSendName === 'function') mpSendName();
+    });
+  }
+  const gc = document.getElementById('guestCode');
+  if (gc) {
+    gc.value = '';
+    gc.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const btn = document.querySelector('[data-action="guestJoin"]');
+        if (btn) btn.click();
+      }
+    });
+  }
+}
+
+// ============================================================
+//  多人房间（真实 WebSocket 房间）
+// ============================================================
+let mpSocket = null;
+let mpId = '';
+let mpRoom = null;
+let mpConnected = false;
+let mpStatusMsg = '';
+let mpRoomRole = 'host';
+let mpPendingAI = false;
+let netRole = null;
+let netPeerId = '';
+let netSnapT = 0;
+let netInputT = 0;
+let sb = null;
+let sbChannel = null;
+let sbMode = false;
+let sbUserId = '';
+let guestMode = false;
+let guestNameBackup = '玩家';
+let pendingGuestCode = '';
+
+function makeGuestName() {
+  return '访客-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+}
+
+function leaveGuestMode() {
+  if (!guestMode) return;
+  guestMode = false;
+  playerName = guestNameBackup || '玩家';
+  pendingGuestCode = '';
+}
+
+function supabaseConfigured() {
+  return !!(window.SUPABASE_URL && window.SUPABASE_ANON_KEY && window.supabase && window.supabase.createClient);
+}
+
+function mpUrl() {
+  let configured = '';
+  try {
+    configured = (typeof window !== 'undefined' && window.ROOM_SERVER_URL) ? String(window.ROOM_SERVER_URL) : '';
+    if (!configured && typeof location !== 'undefined') {
+      const q = new URLSearchParams(location.search || '').get('roomServer');
+      if (q) configured = q;
+    }
+  } catch (e) {}
+  if (configured) {
+    configured = configured.replace(/^http:\/\//i, 'ws://').replace(/^https:\/\//i, 'wss://');
+    return configured.replace(/\/+$/, '');
+  }
+  if (location.protocol === 'file:') return '';
+  return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+}
+
+function mpSend(obj) {
+  if (sbMode) { sbSend(obj); return; }
+  if (mpSocket && mpSocket.readyState === 1) {
+    try { mpSocket.send(JSON.stringify(obj)); } catch (e) {}
+  }
+}
+
+function mpSendName() {
+  if (sbMode) { mpSend({ type: 'name', name: playerName }); return; }
+  if (mpSocket && mpSocket.readyState === 1) mpSend({ type: 'name', name: playerName });
+}
+
+function mpConnect() {
+  if (supabaseConfigured()) {
+    sbMode = true;
+    if (sb) { mpConnected = true; renderMpLobby(); }
+    else sbInit();
+    return;
+  }
+  const url = mpUrl();
+  if (!url) {
+    mpConnected = false;
+    mpStatusMsg = '请用服务器地址打开：node server.js，然后访问 http://本机IP:8787/';
+    renderMpLobby();
+    return;
+  }
+  if (mpSocket && (mpSocket.readyState === 0 || mpSocket.readyState === 1)) return;
+  mpStatusMsg = '正在连接房间服务器…';
+  renderMpLobby();
+  try {
+    mpSocket = new WebSocket(url);
+  } catch (e) {
+    mpConnected = false; mpStatusMsg = '无法连接房间服务器'; renderMpLobby(); return;
+  }
+  mpSocket.onopen = () => {
+    mpConnected = true; mpStatusMsg = '已连接';
+    mpSend({ type: 'hello', name: playerName });
+    renderMpLobby();
+  };
+  mpSocket.onmessage = (e) => {
+    let msg = null;
+    try { msg = JSON.parse(e.data); } catch (_) { return; }
+    mpHandle(msg);
+  };
+  mpSocket.onclose = () => {
+    mpConnected = false; mpRoom = null; mpStatusMsg = '与房间服务器的连接已断开';
+    renderMpLobby();
+  };
+  mpSocket.onerror = () => {
+    mpConnected = false; mpStatusMsg = '连接失败，请确认服务器已启动'; renderMpLobby();
+  };
+}
+
+async function sbInit() {
+  if (sb) { mpConnected = true; renderMpLobby(); return; }
+  sbMode = true; mpConnected = false;
+  mpStatusMsg = '正在连接 Supabase Realtime…';
+  renderMpLobby();
+  try {
+    sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    let uid = '';
+    try {
+      const r = await sb.auth.signInAnonymously();
+      if (r && r.data && r.data.user) uid = r.data.user.id;
+    } catch (e) {}
+    if (!uid) {
+      try {
+        const u = await sb.auth.getUser();
+        if (u && u.data && u.data.user) uid = u.data.user.id;
+      } catch (e) {}
+    }
+    sbUserId = uid || ('u_' + Math.random().toString(36).slice(2, 10));
+    mpId = sbUserId;
+    mpConnected = true;
+    mpStatusMsg = 'Supabase Realtime 已连接';
+    renderMpLobby();
+  } catch (e) {
+    mpConnected = false;
+    mpStatusMsg = 'Supabase 连接失败：' + (e && e.message ? e.message : e);
+    renderMpLobby();
+  }
+}
+
+function sbSend(obj) {
+  if (!obj || !obj.type) return;
+  const t = obj.type;
+  if (t === 'create') { sbCreateRoom(); return; }
+  if (t === 'join') { sbJoinRoom(obj.code); return; }
+  if (t === 'ai') { sbAiFill(); return; }
+  if (t === 'start') { sbStartRoom(); return; }
+  if (t === 'leave') { sbLeaveRoom(); return; }
+  if (t === 'name') { sbTrack(); return; }
+  if (t === 'relay' && sbChannel) {
+    const d = obj.data || {};
+    if (d.k === 'input' || d.k === 'snap') {
+      sbChannel.send({ type: 'broadcast', event: d.k, payload: d });
+    }
+  }
+}
+
+function sbCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return code;
+}
+
+async function sbCreateRoom() {
+  if (!sb) return;
+  await sbCloseChannel();
+  const code = sbCode();
+  mpRoom = { code, hostId: mpId, status: 'waiting', ai: false, players: [{ id: mpId, name: playerName, ai: false }] };
+  mpRoomRole = 'host';
+  mpStatusMsg = '等待玩家加入…';
+  mpConnected = true;
+  renderMpLobby();
+  await sbOpenChannel(code, true);
+}
+
+async function sbJoinRoom(code) {
+  if (!sb) return;
+  code = String(code || '').trim().toUpperCase();
+  if (!code) { mpStatusMsg = '请输入房间号'; renderMpLobby(); return; }
+  await sbCloseChannel();
+  mpRoom = { code, hostId: '', status: 'waiting', ai: false, players: [] };
+  mpRoomRole = 'guest';
+  mpStatusMsg = '正在加入房间…';
+  renderMpLobby();
+  await sbOpenChannel(code, false);
+}
+
+function sbOpenChannel(code, isHost) {
+  return new Promise((resolve) => {
+    try {
+      sbChannel = sb.channel('echoes-room-' + code, {
+        config: { presence: { key: mpId }, broadcast: { self: false } }
+      });
+      sbChannel.on('presence', { event: 'sync' }, () => sbPresenceSync());
+      sbChannel.on('presence', { event: 'leave' }, () => sbPresenceSync());
+      sbChannel.on('broadcast', { event: 'start' }, ({ payload }) => sbOnStart(payload));
+      sbChannel.on('broadcast', { event: 'lobby' }, ({ payload }) => sbOnLobby(payload));
+      sbChannel.on('broadcast', { event: 'input' }, ({ payload }) => {
+        mpHandle({ type: 'relay', data: { k: 'input', ...(payload || {}) } });
+      });
+      sbChannel.on('broadcast', { event: 'snap' }, ({ payload }) => {
+        mpHandle({ type: 'relay', data: { k: 'snap', snap: payload && payload.snap } });
+      });
+      sbChannel.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          try { await sbChannel.track({ id: mpId, name: playerName, host: !!isHost }); } catch (e) {}
+          sbPresenceSync();
+          resolve();
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          mpStatusMsg = 'Supabase 频道订阅失败（' + status + '）';
+          renderMpLobby();
+          resolve();
+        }
+      });
+    } catch (e) {
+      mpStatusMsg = 'Supabase 频道创建失败：' + (e && e.message ? e.message : e);
+      renderMpLobby();
+      resolve();
+    }
+  });
+}
+
+function sbPresenceSync() {
+  if (!sbChannel || !mpRoom) return;
+  let state = {};
+  try { state = sbChannel.presenceState() || {}; } catch (e) { return; }
+  const map = new Map();
+  let hostId = '';
+  for (const key of Object.keys(state)) {
+    for (const p of state[key] || []) {
+      if (!p || !p.id) continue;
+      if (p.host) hostId = p.id;
+      map.set(p.id, { id: p.id, name: p.name || '玩家', ai: false });
+    }
+  }
+  const players = [...map.values()];
+  if (!hostId) {
+    if (mpRoomRole === 'guest') {
+      mpRoom = null;
+      mpStatusMsg = '房间不存在或房主已离开';
+      renderMpLobby();
+      if (currentUI === 'playing') showSkillToast('房主已离开');
+      setTimeout(() => { if (!mpRoom) sbCloseChannel(); }, 250);
+    }
+    return;
+  }
+  if (mpRoomRole === 'host' && hostId !== mpId) {
+    mpStatusMsg = '房间号已被占用，请返回重开';
+    renderMpLobby();
+    return;
+  }
+  const isHost = hostId === mpId;
+  const nextAi = !!(mpRoom.ai && players.length < 2);
+  mpRoom = {
+    ...mpRoom,
+    code: mpRoom.code,
+    hostId,
+    status: mpRoom.status || 'waiting',
+    ai: nextAi,
+    players
+  };
+  mpRoomRole = isHost ? 'host' : 'guest';
+  if (mpRoomRole === 'guest' && players.length > 2) mpStatusMsg = '房间已满';
+  renderMpLobby();
+}
+
+function sbOnLobby(payload) {
+  if (!mpRoom) return;
+  mpRoom.ai = !!(payload && payload.ai);
+  if (mpRoom.players && mpRoom.players.length >= 2) mpRoom.ai = false;
+  renderMpLobby();
+}
+
+function sbAiFill() {
+  if (mpRoomRole !== 'host' || !mpRoom || !sbChannel) return;
+  if (mpRoom.players.length >= 2) { mpStatusMsg = '已有真人玩家，无需 AI'; renderMpLobby(); return; }
+  mpRoom.ai = true;
+  mpStatusMsg = 'AI 已补位，可以开始';
+  renderMpLobby();
+  sbChannel.send({ type: 'broadcast', event: 'lobby', payload: { ai: true } });
+}
+
+function sbStartRoom() {
+  if (mpRoomRole !== 'host' || !mpRoom || !sbChannel) return;
+  const humans = (mpRoom.players || []).filter(p => !p.ai);
+  const ai = !!mpRoom.ai && humans.length < 2;
+  if (humans.length + (ai ? 1 : 0) < 2) {
+    mpStatusMsg = '至少需要 2 个位置（真人或 AI）';
+    renderMpLobby();
+    return;
+  }
+  mpRoom.status = 'playing';
+  mpRoom.ai = ai;
+  const msg = {
+    type: 'start', code: mpRoom.code, hostId: mpId, ai,
+    players: humans.map(p => ({ id: p.id, name: p.name, ai: false }))
+  };
+  sbChannel.send({ type: 'broadcast', event: 'start', payload: msg });
+  mpStartMultiplayer(msg);
+}
+
+function sbOnStart(msg) {
+  if (!msg || !msg.code) return;
+  if (mpRoom) { mpRoom.status = 'playing'; mpRoom.ai = !!msg.ai; }
+  mpStartMultiplayer(msg);
+}
+
+function sbTrack() {
+  if (!sbChannel) return;
+  try {
+    sbChannel.track({ id: mpId, name: playerName, host: mpRoomRole === 'host' });
+  } catch (e) {}
+}
+
+async function sbLeaveRoom() {
+  await sbCloseChannel();
+  mpRoom = null;
+  mpRoomRole = 'host';
+  mpStatusMsg = '已离开房间';
+  renderMpLobby();
+}
+
+async function sbCloseChannel() {
+  if (!sbChannel) return;
+  const ch = sbChannel;
+  sbChannel = null;
+  try { await ch.untrack(); } catch (e) {}
+  try { await sb.removeChannel(ch); } catch (e) {}
+}
+
+function mpHandle(msg) {
+  if (!msg || !msg.type) return;
+  if (msg.type === 'welcome') {    mpId = msg.id; mpConnected = true;
+    if (msg.name && !playerName) playerName = msg.name;
+    renderMpLobby();
+    return;
+  }
+  if (msg.type === 'room') {
+    mpRoom = msg;
+    mpRoomRole = msg.hostId === mpId ? 'host' : 'guest';
+    mpStatusMsg = msg.status === 'playing' ? '房间已开始' : '等待玩家加入…';
+    renderMpLobby();
+    return;
+  }
+  if (msg.type === 'start') {
+    mpRoomRole = msg.hostId === mpId ? 'host' : 'guest';
+    mpStartMultiplayer(msg);
+    return;
+  }
+  if (msg.type === 'relay') {
+    const data = msg.data || {};
+    if (data.k === 'input' && netRole === 'host') {
+      S.guestInput = data;
+    } else if (data.k === 'snap' && netRole === 'guest') {
+      applyNetSnapshot(data.snap);
+    }
+    return;
+  }
+  if (msg.type === 'error') { mpStatusMsg = msg.message || '房间错误'; renderMpLobby(); return; }
+  if (msg.type === 'roomClosed') { mpRoom = null; mpStatusMsg = msg.reason || '房间已关闭'; renderMpLobby(); return; }
+  if (msg.type === 'left') { mpRoom = null; mpStatusMsg = '已离开房间'; renderMpLobby(); return; }
+}
+
+function guestQuickJoin(code) {
+  code = String(code || '').trim().toUpperCase();
+  if (!/^[A-Z0-9]{6}$/.test(code)) {
+    const gc = document.getElementById('guestCode');
+    if (gc) { gc.placeholder = '请输入 6 位房间号'; gc.focus(); }
+    return;
+  }
+  if (!guestMode) guestNameBackup = playerName || '玩家';
+  guestMode = true;
+  playerName = makeGuestName();
+  pendingGuestCode = code;
+  showMultiplayer();
+}
+
+function showMultiplayer() {
+  currentUI = 'multiplayer';
+  overlay.classList.add('scroll');
+  overlay.classList.remove('start-mode');
+  const backendLabel = supabaseConfigured() ? 'Supabase Realtime' : (mpUrl() || '未配置房间服务器');
+  const subText = guestMode
+    ? '访客模式：只需房间号，自动生成访客名字。房主开始后直接进入游戏。'
+    : '开房后把 6 位房间号发给朋友。房主可等真人加入，或直接 AI 补位。当前支持 Supabase Realtime（无需 Node 服务器），也保留原 WebSocket 服务器回退。';
+  const nameRow = guestMode
+    ? `<div class="mpRow"><span style="font-size:11px;color:rgba(190,215,240,.55);">访客</span><b style="color:#9ef9d8;font-size:12px;letter-spacing:1px;">${playerName}</b></div>`
+    : `<div class="mpRow"><span style="font-size:11px;color:rgba(190,215,240,.55);">名字</span><input id="mpName" maxlength="12" value="${playerName.replace(/"/g, '&quot;')}" autocomplete="off"></div>`;
+  overlay.innerHTML = `
+    <div class="mpWrap">
+      <h2>多人房间</h2>
+      <p class="mpSub">${subText}</p>
+      ${nameRow}
+      <div id="mpBody"></div>
+      <div class="mpStatus" id="mpStatus"></div>
+      <div class="mpActions"><button data-action="mpBack" class="secondary">返回开始界面</button></div>
+      <div class="mpHint">连接：${backendLabel}<br>Supabase 模式需要在 index.html 填入项目 URL 与 anon public key；旧 Node 模式则填 wss:// 地址。</div>
+    </div>
+  `;
+  overlay.classList.remove('hidden');
+  const ni = document.getElementById('mpName');
+  if (ni) {
+    ni.addEventListener('input', () => {
+      playerName = (ni.value || '').trim().slice(0, 12) || '玩家';
+      savePlayerName();
+      mpSendName();
+    });
+  }
+  renderMpLobby();
+  if (!mpSocket || mpSocket.readyState > 1) mpConnect();
+  else if (mpSocket.readyState === 1) mpSend({ type: 'hello', name: playerName });
+}
+
+function renderMpLobby() {
+  const body = document.getElementById('mpBody');
+  const status = document.getElementById('mpStatus');
+  if (!body) return;
+  if (status) status.textContent = mpStatusMsg || '';
+  if (!mpConnected) {
+    body.innerHTML = `<div class="mpHint" style="font-size:12px;color:rgba(200,220,245,.7);">${mpStatusMsg || '正在连接…'}</div>
+      <div class="mpActions"><button data-action="mpReconnect">重新连接</button></div>`;
+    return;
+  }
+  if (!mpRoom) {
+    if (pendingGuestCode) {
+      const code = pendingGuestCode;
+      pendingGuestCode = '';
+      mpStatusMsg = '正在加入 ' + code + '…';
+      if (status) status.textContent = mpStatusMsg;
+      body.innerHTML = `<div class="mpHint" style="font-size:12px;color:rgba(200,220,245,.75);">正在加入房间 ${code}…</div>`;
+      mpSend({ type: 'join', code });
+      return;
+    }
+    if (guestMode) {
+      body.innerHTML = `
+        <div class="mpHint">输入 6 位房间号即可加入，不需要设置名字。</div>
+        <div class="mpRow"><input id="mpJoinCode" maxlength="6" placeholder="输入 6 位房间号" autocomplete="off" style="text-transform:uppercase"><button data-action="mpJoin">加入房间</button></div>
+      `;
+      return;
+    }
+    body.innerHTML = `
+      <div class="mpActions"><button data-action="mpCreate">创建房间</button></div>
+      <div class="mpRow"><input id="mpJoinCode" maxlength="6" placeholder="输入 6 位房间号" autocomplete="off" style="text-transform:uppercase"><button data-action="mpJoin">加入房间</button></div>
+    `;
+    return;
+  }
+  const players = mpRoom.players || [];
+  const isHost = mpRoomRole === 'host';
+  const slots = players.length + (mpRoom.ai ? 1 : 0);
+  const playerRows = players.map(p => `<div class="mpPlayer"><span>${p.name || '玩家'}${p.id === mpId ? '（你）' : ''}</span><span class="tag">${p.ai ? 'AI' : (p.id === mpRoom.hostId ? '房主' : '玩家')}</span></div>`).join('')
+    + (mpRoom.ai ? '<div class="mpPlayer"><span>AI-02</span><span class="tag">AI</span></div>' : '');
+  const canStart = slots >= 2;
+  body.innerHTML = `
+    <div class="mpCode">${mpRoom.code}</div>
+    <div class="mpPlayers">${playerRows}</div>
+    <div class="mpHint">${isHost ? (slots < 2 ? '等待玩家加入，或点击 AI 补位。' : '可以开始游戏。') : '等待房主开始游戏…'}</div>
+    <div class="mpActions">
+      ${isHost && canStart ? '<button data-action="mpStart">开始游戏</button>' : ''}
+      ${isHost && players.length < 2 && !mpRoom.ai ? '<button data-action="mpAI" class="secondary">AI 补位</button>' : ''}
+      <button data-action="mpLeave" class="secondary">离开房间</button>
+    </div>
+  `;
+  const aiBtn = body.querySelector('[data-action="mpAI"]');
+  if (aiBtn) aiBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); mpSend({ type: 'ai' }); });
+  const startBtn = body.querySelector('[data-action="mpStart"]');
+  if (startBtn) startBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); mpSend({ type: 'start' }); });
+}
+
+function mpStartMultiplayer(msg) {
+  mpPendingAI = !!msg.ai;
+  mpRoomRole = msg.hostId === mpId ? 'host' : 'guest';
+  netRole = mpRoomRole;
+  const others = (msg.players || []).filter(p => p.id !== mpId);
+  netPeerId = others.length ? others[0].id : '';
+  if (mpRoom) mpRoom.status = 'playing';
+  overlay.classList.add('hidden');
+  initAudio();
+  resize();
+  initGame();
+  S.roomCode = msg.code || '';
+  S.roomRole = mpRoomRole;
+  S.netRole = netRole;
+  S.netPeerId = netPeerId;
+  netSnapT = 0; netInputT = 0;
+  if (netRole === 'host' && netPeerId) spawnGuestPlayer();
+  if (mpPendingAI) spawnAiMate();
+  lastTs = 0; currentUI = 'playing';
+  showSkillToast(`房间 ${msg.code} · 已进入${netPeerId ? ' · 双人' : (mpPendingAI ? ' · AI 队友' : '')}`);
+  updateCardAutoUI();
+}
+
+function netSerializePlayer(p) {
+  if (!p) return null;
+  return {
+    x: p.x, y: p.y, r: p.r, hp: p.hp, angle: p.angle,
+    invuln: p.invuln || 0, down: p.down || 0,
+    vx: p.vx || 0, vy: p.vy || 0, shootCd: p.shootCd || 0
+  };
+}
+
+function spawnGuestPlayer() {
+  if (!S.player) return;
+  S.player2 = {
+    x: S.player.x + 56, y: S.player.y + 24,
+    r: PLAYER_BASE_R, hp: 3, invuln: 1.2, angle: 0, down: 0,
+    vx: 0, vy: 0, shootCd: 0
+  };
+}
+
+function netNearestPlayer(en) {
+  if (!S.player2 || S.player2.down > 0) return S.player;
+  const d1 = Math.hypot(S.player.x - en.x, S.player.y - en.y);
+  const d2 = Math.hypot(S.player2.x - en.x, S.player2.y - en.y);
+  return d2 < d1 ? S.player2 : S.player;
+}
+
+function hurtGuestPlayer() {
+  const p2 = S.player2;
+  if (!p2 || p2.down > 0 || p2.invuln > 0) return;
+  p2.hp -= 1;
+  p2.invuln = 1.0;
+  S.flash = Math.max(S.flash, 0.3);
+  if (p2.hp <= 0) {
+    p2.hp = 0;
+    p2.down = 5;
+    showSkillToast('P2 倒地，5 秒后重生');
+  }
+}
+
+function updateGuestPlayer(dt) {
+  const p2 = S.player2;
+  if (!p2) return;
+  if (p2.invuln > 0) p2.invuln = Math.max(0, p2.invuln - dt);
+  if (p2.down > 0) {
+    p2.down -= dt;
+    if (p2.down <= 0) {
+      p2.down = 0; p2.hp = 3; p2.invuln = 2;
+      p2.x = S.player.x + 48; p2.y = S.player.y + 24;
+    }
+    return;
+  }
+  const g = S.guestInput;
+  let mx = g ? g.mx : 0, my = g ? g.my : 0;
+  const len = Math.hypot(mx, my);
+  if (len > 1) { mx /= len; my /= len; }
+  const sp = PLAYER_MAX_SPEED * 0.95;
+  p2.vx = mx * sp; p2.vy = my * sp;
+  p2.x += p2.vx * dt; p2.y += p2.vy * dt;
+  if (S.map) {
+    p2.x = Math.max(p2.r + 6, Math.min(S.map.w - p2.r - 6, p2.x));
+    p2.y = Math.max(p2.r + 6, Math.min(S.map.h - p2.r - 6, p2.y));
+    resolveCircleWalls(p2);
+    resolveCircleBlocks(p2, true);
+  }
+  if (g) p2.angle = Math.atan2(g.ay - p2.y, g.ax - p2.x);
+  p2.shootCd -= dt;
+  if (g && g.shoot && p2.shootCd <= 0) {
+    p2.shootCd = 0.24 / Math.pow(1.5, S.rapidStacks || 0);
+    const count = 1 + (S.spreadStacks || 0) + (S.buffs.spread > 0 ? 2 : 0);
+    const baseA = p2.angle;
+    for (let i = 0; i < count; i++) {
+      const off = (i - (count - 1) / 2) * 0.12;
+      const a = baseA + off;
+      S.pBullets.push({
+        x: p2.x + Math.cos(a) * (p2.r + 5),
+        y: p2.y + Math.sin(a) * (p2.r + 5),
+        vx: Math.cos(a) * 760, vy: Math.sin(a) * 760,
+        r: 3.4, life: 1.7, damage: BULLET_DAMAGE,
+        color: '#5fb8ff', player2: true
+      });
+    }
+    sfx(760, 0.04, 'triangle', 0.018);
+  }
+}
+
+function makeNetSnapshot() {
+  return {
+    players: { host: netSerializePlayer(S.player), guest: netSerializePlayer(S.player2) },
+    map: S.map,
+    enemies: S.enemies, pBullets: S.pBullets, eBullets: S.eBullets,
+    echoes: S.echoes, pets: S.pets, powerups: S.powerups,
+    blocks: S.blocks, shockwaves: S.shockwaves, knives: S.knives,
+    score: S.score, wave: S.wave, combo: S.combo, energy: S.energy,
+    sniperMag: S.sniperMag, bombStacks: S.bombStacks, eggStacks: S.eggStacks, meleeCount: S.meleeCount,
+    visionTimer: S.visionTimer, visionBank: S.visionBank,
+    goldenTimer: S.goldenTimer, burrowTimer: S.burrowTimer,
+    banner: S.banner, gameTime: S.gameTime, over: S.over, running: S.running,
+    rapidStacks: S.rapidStacks, spreadStacks: S.spreadStacks
+  };
+}
+
+function netHostTick(dt) {
+  if (netRole !== 'host' || !netPeerId) return;
+  netSnapT -= dt;
+  if (netSnapT <= 0) {
+    netSnapT = 1 / 10;
+    mpSend({ type: 'relay', data: { k: 'snap', snap: makeNetSnapshot() } });
+  }
+}
+
+function netGuestUpdate(dt, mw) {
+  if (!S.player) return;
+  updateCamera(dt, true);
+  let mx = 0, my = 0;
+  if (keys[KEYBINDS.moveLeft] || keys['arrowleft']) mx -= 1;
+  if (keys[KEYBINDS.moveRight] || keys['arrowright']) mx += 1;
+  if (keys[KEYBINDS.moveUp] || keys['arrowup']) my -= 1;
+  if (keys[KEYBINDS.moveDown] || keys['arrowdown']) my += 1;
+  if (MOBILE && touchMove.active) { mx = touchMove.x; my = touchMove.y; }
+  const len = Math.hypot(mx, my);
+  if (len > 1) { mx /= len; my /= len; }
+  netInputT -= dt;
+  if (netInputT <= 0) {
+    netInputT = 1 / 20;
+    const shoot = MOBILE ? (touchAim.active && touchAim.mag > 0.16) : true;
+    mpSend({ type: 'relay', data: { k: 'input', mx, my, ax: mw.x, ay: mw.y, shoot } });
+  }
+}
+
+function applyNetSnapshot(snap) {
+  if (netRole !== 'guest' || !snap || !snap.players) return;
+  const wasOver = S.over;
+  S.map = snap.map;
+  S.player = snap.players.guest;
+  S.player2 = snap.players.host;
+  if (!S.player) return;
+  S.enemies = snap.enemies || [];
+  S.pBullets = snap.pBullets || [];
+  S.eBullets = snap.eBullets || [];
+  S.echoes = snap.echoes || [];
+  S.pets = snap.pets || [];
+  S.powerups = snap.powerups || [];
+  S.blocks = snap.blocks || [];
+  S.shockwaves = snap.shockwaves || [];
+  S.knives = snap.knives || [];
+  S.score = snap.score || 0;
+  S.wave = snap.wave || 1;
+  S.combo = snap.combo || 0;
+  S.energy = snap.energy || 0;
+  S.sniperMag = snap.sniperMag || 0;
+  S.bombStacks = snap.bombStacks || 0;
+  S.eggStacks = snap.eggStacks || 0;
+  S.meleeCount = snap.meleeCount || 0;
+  S.visionTimer = snap.visionTimer || 0;
+  S.visionBank = snap.visionBank || 0;
+  S.goldenTimer = snap.goldenTimer || 0;
+  S.burrowTimer = snap.burrowTimer || 0;
+  S.banner = snap.banner || { text: '', life: 0 };
+  S.gameTime = snap.gameTime || 0;
+  S.rapidStacks = snap.rapidStacks || 0;
+  S.spreadStacks = snap.spreadStacks || 0;
+  S.over = !!snap.over;
+  S.running = !!snap.running;
+  S.scopeLevel = 0;
+  S.bossRef = (S.enemies || []).find(e => e.type === 'boss') || null;
+  S.aiMate = null;
+  S.cardMode = false;
+  S.cards = [];
+  updateCamera(0, true);
+  updateHUD();
+  if (S.over && !wasOver) {
+    S.over = true;
+    S.running = false;
+    setTimeout(showGameOver, 400);
+  }
+}
+
+function drawGuestPlayer() {
+  const p2 = S.player2;
+  if (!p2) return;
+  ctx.save();
+  ctx.translate(p2.x, p2.y);
+  ctx.globalAlpha = p2.down > 0 ? 0.35 : 1;
+  ctx.strokeStyle = 'rgba(95,184,255,.9)';
+  ctx.fillStyle = 'rgba(8,20,36,.92)';
+  ctx.lineWidth = 1.8;
+  ctx.beginPath(); ctx.arc(0, 0, p2.r + 4, 0, 7); ctx.stroke();
+  ctx.rotate(p2.angle || 0);
+  ctx.beginPath();
+  ctx.moveTo(0, -p2.r * 0.9);
+  ctx.lineTo(p2.r * 0.8, p2.r * 0.65);
+  ctx.lineTo(0, p2.r * 0.3);
+  ctx.lineTo(-p2.r * 0.8, p2.r * 0.65);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(p2.r * 0.4, 0); ctx.lineTo(p2.r + 9, 0); ctx.stroke();
+  ctx.restore();
+  ctx.save();
+  ctx.fillStyle = 'rgba(95,184,255,.85)';
+  ctx.font = '800 8px -apple-system, "PingFang SC", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(netRole === 'guest' ? 'HOST' : 'P2', p2.x, p2.y - p2.r - 8);
+  if (p2.down > 0) {
+    ctx.fillStyle = 'rgba(255,120,120,.9)';
+    ctx.fillText('DOWN ' + Math.ceil(p2.down), p2.x, p2.y + p2.r + 14);
+  }
+  ctx.restore();
+}
+
+function spawnAiMate() {
+  if (!S.player) return;
+  S.aiMate = {
+    x: S.player.x - 54,
+    y: S.player.y + 30,
+    r: 10,
+    angle: 0,
+    cd: 0.4
+  };
+}
+
+function mpBackToStart() {
+  mpSend({ type: 'leave' });
+  if (sbMode) sbCloseChannel();
+  if (mpSocket) { try { mpSocket.close(); } catch (e) {} }
+  mpSocket = null; mpConnected = false; mpRoom = null; mpPendingAI = false;
+  leaveGuestMode();
+  showStart();
 }
 
 function showGameOver() {
@@ -5666,6 +6916,7 @@ function showGameOver() {
     </div>
   `;
   overlay.classList.remove('hidden');
+  updateCardAutoUI();
 }
 
 async function tryForceLandscape() {
@@ -5683,10 +6934,34 @@ async function tryForceLandscape() {
 overlay.addEventListener('click', (e) => {
   const bindBtn = e.target.closest('[data-bind]');
   if (bindBtn) { e.preventDefault(); startBind(bindBtn.dataset.bind); return; }
+  const prioBtn = e.target.closest('[data-prio]');
+  if (prioBtn) {
+    e.preventDefault();
+    moveCardPriority(prioBtn.dataset.prio, Number(prioBtn.dataset.dir));
+    return;
+  }
   const btn = e.target.closest('button[data-action]');
   if (!btn) return;
   const act = btn.dataset.action;
 
+  if (act === 'guestJoin') {
+    const gc = document.getElementById('guestCode');
+    guestQuickJoin(gc ? gc.value : '');
+    return;
+  }
+  if (act === 'multiplayer') { leaveGuestMode(); showMultiplayer(); return; }
+  if (act === 'mpCreate') { mpStatusMsg = '创建房间…'; renderMpLobby(); mpSend({ type: 'create', name: playerName }); return; }
+  if (act === 'mpJoin') {
+    const codeInput = document.getElementById('mpJoinCode');
+    const code = (codeInput ? codeInput.value : '').trim().toUpperCase();
+    if (!code) { mpStatusMsg = '请输入房间号'; renderMpLobby(); return; }
+    mpStatusMsg = '加入房间…'; renderMpLobby(); mpSend({ type: 'join', code, name: playerName }); return;
+  }
+  if (act === 'mpAI') { mpSend({ type: 'ai' }); return; }
+  if (act === 'mpStart') { mpSend({ type: 'start' }); return; }
+  if (act === 'mpLeave') { mpSend({ type: 'leave' }); mpRoom = null; mpStatusMsg = '已离开房间'; renderMpLobby(); return; }
+  if (act === 'mpBack') { mpBackToStart(); return; }
+  if (act === 'mpReconnect') { mpConnect(); return; }
   if (act === 'debug') { toggleDebugMode(); return; }
   if (act === 'start' || act === 'restart') {
     tryForceLandscape();
@@ -5697,7 +6972,18 @@ overlay.addEventListener('click', (e) => {
   else if (act === 'pauseSettings') showSettings('pause');
   else if (act === 'resume') togglePause();
   else if (act === 'resetBinds') resetBinds();
+  else if (act === 'toggleAuto') { toggleCardAuto(); showSettings(settingsReturn); }
   else if (act === 'closeSettings') closeSettings();
+});
+
+const cardAutoToggleEl = document.getElementById('cardAutoToggle');
+const cardPriorityBtnEl = document.getElementById('cardPriorityBtn');
+if (cardAutoToggleEl) cardAutoToggleEl.addEventListener('click', (e) => { e.stopPropagation(); toggleCardAuto(); });
+if (cardPriorityBtnEl) cardPriorityBtnEl.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!S.running || S.over) return;
+  S.paused = true;
+  showSettings('pause');
 });
 
 // ============================================================
@@ -5713,6 +6999,8 @@ if (/[?&]debug=1(?:&|$)/.test(location.search)) {
   debugCardMode = true;
   saveDebugMode(true);
 }
+loadCardPrefs();
+loadPlayerName();
 showStart();
 window.addEventListener('pagehide', () => {
   if (S.running && S.player) saveVisionState(S.visionBank + S.visionTimer);
